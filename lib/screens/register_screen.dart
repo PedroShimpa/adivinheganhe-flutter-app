@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
@@ -20,7 +19,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool loading = false;
 
   // Gera fingerprint fake (apenas para testes)
-  String generateFingerprint() => Random().nextInt(999999).toString();
 
   Future<void> register() async {
     if (nameController.text.isEmpty ||
@@ -40,8 +38,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         nameController.text,
         emailController.text,
         usernameController.text,
-        passwordController.text,
-        generateFingerprint(),
+        passwordController.text
       );
 
       if (result['statusCode'] == 200 && result['token'] != null) {
