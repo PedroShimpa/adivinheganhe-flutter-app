@@ -9,8 +9,8 @@ class HomeScreen extends StatefulWidget {
   final bool loggedIn;
   // ignore: prefer_typing_uninitialized_variables
   final user;
-  final String? userName;
-  const HomeScreen({super.key, this.loggedIn = false, this.userName, this.user});
+  final String? username;
+  const HomeScreen({super.key, this.loggedIn = false, this.username, this.user});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -34,7 +34,7 @@ class _HomeScreenState extends State<HomeScreen>
     try {
       final token = await apiService.getToken();
       final response = await http.get(
-        Uri.parse('${ApiService.baseUrl}/adivinhacoes'),
+        Uri.parse('${ApiService.baseUrl}/adivinhacoes/index'),
         headers: {"Authorization": "Bearer $token"},
       );
       if (response.statusCode == 200) {
@@ -74,7 +74,7 @@ class _HomeScreenState extends State<HomeScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("Bem-vindo, ${widget.userName ?? 'Usuário'}"),
+        title: Text("Bem-vindo, ${widget.username ?? 'Usuário'}"),
         backgroundColor: const Color(0xFF142B44),
         bottom: TabBar(
           controller: _tabController,
@@ -121,7 +121,7 @@ class _HomeScreenState extends State<HomeScreen>
     try {
       final token = await apiService.getToken();
       final response = await http.post(
-        Uri.parse('${ApiService.baseUrl}/adivinhacoes/responder'),
+        Uri.parse('${ApiService.baseUrl}/adivinhacao/responder'),
         headers: {
           "Authorization": "Bearer $token",
           "Content-Type": "application/json",

@@ -52,7 +52,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           MaterialPageRoute(
             builder: (_) => HomeScreen(
               loggedIn: true,
-              userName: result['user']['name'] ?? '',
+              username: result['user']['name'] ?? '',
             ),
           ),
         );
@@ -95,7 +95,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               TextField(
                 controller: usernameController,
                 decoration: const InputDecoration(
-                  labelText: 'Username',
+                  labelText: 'username',
                   border: OutlineInputBorder(),
                 ),
               ),

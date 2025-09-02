@@ -94,7 +94,7 @@ class _MyAppState extends State<MyApp> {
     return {
       'loggedIn': token != null,
       'user': user,
-      'userName': user != null ? user['name'] : null,
+      'username': user != null ? user['username'] : null,
     };
   }
 
@@ -123,11 +123,11 @@ class _MyAppState extends State<MyApp> {
 
           final bool loggedIn = snapshot.data?['loggedIn'] ?? false;
           final user = snapshot.data?['user'];
-          final userName = snapshot.data?['userName'];
+          final username = snapshot.data?['username'];
 
           // This part correctly routes the user on startup
           return loggedIn
-              ? HomeScreen(loggedIn: true, user: user, userName: userName)
+              ? HomeScreen(loggedIn: true, user: user, username: username)
               : const LoginScreen();
         },
       ),
@@ -142,7 +142,7 @@ class _MyAppState extends State<MyApp> {
                   false, // Assuming if you navigate to '/home', the user is logged in.
               user:
                   null, // Data would need to be re-fetched or managed by a state solution.
-              userName: null,
+              username: null,
             ),
       },
     );

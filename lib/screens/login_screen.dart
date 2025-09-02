@@ -31,14 +31,14 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       if (success) {
         final user = await apiService.getUser();
-        final userName = user?['name'] ?? 'Usuário';
+        final username = user?['name'] ?? 'Usuário';
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Login realizado!')),
         );
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (_) => HomeScreen(loggedIn: true, userName: userName),
+            builder: (_) => HomeScreen(loggedIn: true, username: username),
           ),
         );
       } else {
@@ -73,14 +73,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final userName = data['user']['name'] ?? 'Usuário';
+        final username = data['user']['name'] ?? 'Usuário';
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Login com Google realizado!')),
         );
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (_) => HomeScreen(loggedIn: true, userName: userName),
+            builder: (_) => HomeScreen(loggedIn: true, username: username),
           ),
         );
       } else {

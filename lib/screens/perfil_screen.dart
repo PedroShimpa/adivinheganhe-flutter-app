@@ -53,7 +53,7 @@ class _PerfilScreenState extends State<PerfilScreen>
   Future<void> _loadPosts() async {
     final username = widget.user?['username'];
     final res = await http.get(
-      Uri.parse('https://adivinheganhe.com.br/api/posts/$username'),
+      Uri.parse('https://adivinheganhe.com.br/api/posts/by-user/$username'),
       headers: {'Authorization': 'Bearer ${widget.currentUser?['token']}'},
     );
 
@@ -103,7 +103,7 @@ class _PerfilScreenState extends State<PerfilScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(user?['name'] ?? ''),
+        title: Text(user?['username'] ?? ''),
         actions: [
           if (isOwnProfile)
             IconButton(
