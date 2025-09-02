@@ -36,37 +36,48 @@ class _PerfilScreenState extends State<PerfilScreen>
     final currentUserId = widget.currentUser?['id'];
     final token = await apiService.getToken();
 
-    if (widget.user?['perfil_privado'] == 'S' && userId != currentUserId) {
-      final res = await http.get(
-        Uri.parse('${ApiService.baseUrl}/api/meu-amigo/$userId'),
-        headers: {"Authorization": "Bearer $token"},
-      );
-      if (res.statusCode == 200) {
-        final data = json.decode(res.body);
-        setState(() {
-          isFriend = data['isFriend'] ?? false;
-          loading = false;
-        });
+    try {
+      if (widget.user?['perfil_privado'] == 'S' && userId != currentUserId) {
+        final res = await http.get(
+          Uri.parse('${ApiService.baseUrl}/api/meu-amigo/$userId'),
+          headers: {"Authorization": "Bearer $token"},
+        );
+        if (res.statusCode == 200) {
+          final data = json.decode(res.body);
+          setState(() {
+            isFriend = data['isFriend'] ?? false;
+          });
+        }
+      } else {
+        await _loadPosts();
       }
-    } else {
-      _loadPosts();
+    } catch (e) {
+      debugPrint("Erro em _checkFriendshipAndLoad: $e");
+    } finally {
+      setState(() => loading = false);
     }
   }
 
   Future<void> _loadPosts() async {
     final username = widget.user?['username'];
     final token = await apiService.getToken();
-    final res = await http.get(
-      Uri.parse('${ApiService.baseUrl}/posts/by-user/$username'),
-      headers: {"Authorization": "Bearer $token"},
-    );
 
-    if (res.statusCode == 200) {
-      final data = json.decode(res.body);
-      setState(() {
-        posts = data['posts'] ?? [];
-        loading = false;
-      });
+    try {
+      final res = await http.get(
+        Uri.parse('${ApiService.baseUrl}/posts/by-user/$username'),
+        headers: {"Authorization": "Bearer $token"},
+      );
+
+      if (res.statusCode == 200) {
+        final data = json.decode(res.body);
+        setState(() {
+          posts = data['posts'] ?? [];
+        });
+      } else {
+        debugPrint("Erro ao carregar posts: ${res.statusCode}");
+      }
+    } catch (e) {
+      debugPrint("Exceção em _loadPosts: $e");
     }
   }
 

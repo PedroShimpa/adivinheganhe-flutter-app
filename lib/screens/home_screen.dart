@@ -10,7 +10,12 @@ class HomeScreen extends StatefulWidget {
   // ignore: prefer_typing_uninitialized_variables
   final user;
   final String? username;
-  const HomeScreen({super.key, this.loggedIn = false, this.username, this.user});
+  const HomeScreen({
+    super.key,
+    this.loggedIn = false,
+    this.username,
+    this.user,
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -32,6 +37,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   Future<void> fetchAdivinhacoes() async {
     try {
+      final ApiService apiService = ApiService();
       final token = await apiService.getToken();
       final response = await http.get(
         Uri.parse('${ApiService.baseUrl}/adivinhacoes/index'),
@@ -59,7 +65,7 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context)  {
     if (!widget.loggedIn) {
       return const Scaffold(
         backgroundColor: Color(0xFF0D1B2A),
@@ -74,7 +80,10 @@ class _HomeScreenState extends State<HomeScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("Bem-vindo, ${widget.username ?? 'Usuário'}", style: TextStyle(color: Colors.white)),
+        title: Text(
+          "Bem-vindo, ${widget.username ?? 'Usuário'}",
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: const Color(0xFF142B44),
         bottom: TabBar(
           controller: _tabController,
@@ -105,11 +114,7 @@ class _HomeScreenState extends State<HomeScreen>
                 },
               ),
 
-          // ------------------ ABA PERFIL ------------------
-          PerfilScreen(
-            user:widget.user,
-            onLogout: logout,
-          ),
+          PerfilScreen(user: widget.user, onLogout: logout),
         ],
       ),
       backgroundColor: const Color(0xFF0D1B2A),
