@@ -1,3 +1,4 @@
+import 'package:adivinheganhe/services/api_service.dart';
 import 'package:adivinheganhe/widgets/post_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -17,6 +18,7 @@ class PerfilScreen extends StatefulWidget {
 
 class _PerfilScreenState extends State<PerfilScreen>
     with SingleTickerProviderStateMixin {
+  final ApiService apiService = ApiService();
   bool isFriend = false;
   bool loading = true;
   List posts = [];
@@ -32,11 +34,12 @@ class _PerfilScreenState extends State<PerfilScreen>
   Future<void> _checkFriendshipAndLoad() async {
     final userId = widget.user?['id'];
     final currentUserId = widget.currentUser?['id'];
+    final token = await apiService.getToken();
 
     if (widget.user?['perfil_privado'] == 'S' && userId != currentUserId) {
       final res = await http.get(
-        Uri.parse('https://adivinheganhe.com.br/api/meu-amigo/$userId'),
-        headers: {'Authorization': 'Bearer ${widget.currentUser?['token']}'},
+        Uri.parse('${ApiService.baseUrl}/api/meu-amigo/$userId'),
+        headers: {"Authorization": "Bearer $token"},
       );
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
@@ -52,9 +55,10 @@ class _PerfilScreenState extends State<PerfilScreen>
 
   Future<void> _loadPosts() async {
     final username = widget.user?['username'];
+    final token = await apiService.getToken();
     final res = await http.get(
-      Uri.parse('https://adivinheganhe.com.br/api/posts/by-user/$username'),
-      headers: {'Authorization': 'Bearer ${widget.currentUser?['token']}'},
+      Uri.parse('${ApiService.baseUrl}/posts/by-user/$username'),
+      headers: {"Authorization": "Bearer $token"},
     );
 
     if (res.statusCode == 200) {
@@ -68,11 +72,12 @@ class _PerfilScreenState extends State<PerfilScreen>
 
   Future<void> _sendFriendRequest() async {
     final username = widget.user?['username'];
+    final token = await apiService.getToken();
     await http.post(
       Uri.parse(
         'https://adivinheganhe.com.br/api/user/$username/enviar-pedido-de-amizade',
       ),
-      headers: {'Authorization': 'Bearer ${widget.currentUser?['token']}'},
+      headers: {'Authorization': 'Bearer ${token}'},
     );
     ScaffoldMessenger.of(
       context,
@@ -80,12 +85,10 @@ class _PerfilScreenState extends State<PerfilScreen>
   }
 
   Future<void> _createPost(String content) async {
+    final token = await apiService.getToken();
     await http.post(
-      Uri.parse('https://adivinheganhe.com.br/api/posts/store'),
-      headers: {
-        'Authorization': 'Bearer ${widget.currentUser?['token']}',
-        'Content-Type': 'application/json',
-      },
+      Uri.parse('${ApiService.baseUrl}/posts/store'),
+      headers: {"Authorization": "Bearer $token"},
       body: json.encode({'content': content}),
     );
     _loadPosts(); // recarrega posts

@@ -74,7 +74,7 @@ class _HomeScreenState extends State<HomeScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("Bem-vindo, ${widget.username ?? 'Usuário'}"),
+        title: Text("Bem-vindo, ${widget.username ?? 'Usuário'}", style: TextStyle(color: Colors.white)),
         backgroundColor: const Color(0xFF142B44),
         bottom: TabBar(
           controller: _tabController,
