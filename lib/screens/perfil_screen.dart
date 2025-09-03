@@ -6,11 +6,16 @@ import 'dart:convert';
 import 'package:adivinheganhe/screens/edit_profile_screen.dart';
 
 class PerfilScreen extends StatefulWidget {
-  final Map<String, dynamic>? user;
-  final Map<String, dynamic>? currentUser; // usuário autenticado
+  final String username;
+  final Map<String, dynamic>? currentUser;
   final VoidCallback? onLogout;
 
-  const PerfilScreen({super.key, this.user, this.currentUser, this.onLogout});
+  const PerfilScreen({
+    super.key,
+    required this.username,
+    this.currentUser,
+    this.onLogout,
+  });
 
   @override
   State<PerfilScreen> createState() => _PerfilScreenState();
@@ -19,8 +24,8 @@ class PerfilScreen extends StatefulWidget {
 class _PerfilScreenState extends State<PerfilScreen>
     with SingleTickerProviderStateMixin {
   final ApiService apiService = ApiService();
-  bool isFriend = false;
   bool loading = true;
+  Map<String, dynamic>? user;
   List posts = [];
   late TabController _tabController;
 
@@ -28,67 +33,39 @@ class _PerfilScreenState extends State<PerfilScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _checkFriendshipAndLoad();
+    _loadUser();
   }
 
-  Future<void> _checkFriendshipAndLoad() async {
-    final userId = widget.user?['id'];
-    final currentUserId = widget.currentUser?['id'];
+  Future<void> _loadUser() async {
     final token = await apiService.getToken();
-
-    try {
-      if (widget.user?['perfil_privado'] == 'S' && userId != currentUserId) {
-        final res = await http.get(
-          Uri.parse('${ApiService.baseUrl}/api/meu-amigo/$userId'),
-          headers: {"Authorization": "Bearer $token"},
-        );
-        if (res.statusCode == 200) {
-          final data = json.decode(res.body);
-          setState(() {
-            isFriend = data['isFriend'] ?? false;
-          });
-        }
-      } else {
-        await _loadPosts();
-      }
-    } catch (e) {
-      debugPrint("Erro em _checkFriendshipAndLoad: $e");
-    } finally {
-      setState(() => loading = false);
-    }
-  }
-
-  Future<void> _loadPosts() async {
-    final username = widget.user?['username'];
-    final token = await apiService.getToken();
-
     try {
       final res = await http.get(
-        Uri.parse('${ApiService.baseUrl}/posts/by-user/$username'),
+        Uri.parse('${ApiService.baseUrl}/user/${widget.username}'),
         headers: {"Authorization": "Bearer $token"},
       );
 
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
+        final u = data['user'];
         setState(() {
-          posts = data['posts'] ?? [];
+          user = u;
+          posts = u['posts'] ?? [];
         });
-      } else {
-        debugPrint("Erro ao carregar posts: ${res.statusCode}");
       }
     } catch (e) {
-      debugPrint("Exceção em _loadPosts: $e");
+      debugPrint("Exceção em _loadUser: $e");
+    } finally {
+      setState(() => loading = false);
     }
   }
 
   Future<void> _sendFriendRequest() async {
-    final username = widget.user?['username'];
     final token = await apiService.getToken();
     await http.post(
       Uri.parse(
-        'https://adivinheganhe.com.br/api/user/$username/enviar-pedido-de-amizade',
+        '${ApiService.baseUrl}/user/${user?['username']}/enviar-pedido-de-amizade',
       ),
-      headers: {'Authorization': 'Bearer ${token}'},
+      headers: {'Authorization': 'Bearer $token'},
     );
     ScaffoldMessenger.of(
       context,
@@ -99,25 +76,47 @@ class _PerfilScreenState extends State<PerfilScreen>
     final token = await apiService.getToken();
     await http.post(
       Uri.parse('${ApiService.baseUrl}/posts/store'),
-      headers: {"Authorization": "Bearer $token"},
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
       body: json.encode({'content': content}),
     );
-    _loadPosts(); // recarrega posts
+    _loadUser(); // recarrega o user (com posts novos)
   }
 
   @override
   Widget build(BuildContext context) {
-    final user = widget.user;
     final currentUser = widget.currentUser;
     final isOwnProfile = user?['id'] == currentUser?['id'];
 
     if (loading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Scaffold(
+        backgroundColor: Color(0xFF0D1B2A),
+        body: Center(child: CircularProgressIndicator(color: Colors.white)),
+      );
+    }
+
+    if (user == null) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF0D1B2A),
+        body: Center(
+          child: Text(
+            "Usuário não encontrado",
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
     }
 
     return Scaffold(
+      backgroundColor: const Color(0xFF0D1B2A),
       appBar: AppBar(
-        title: Text(user?['username'] ?? ''),
+        backgroundColor: const Color(0xFF142B44),
+        title: Text(
+          user?['username'] ?? '',
+          style: const TextStyle(color: Colors.white),
+        ),
         actions: [
           if (isOwnProfile)
             IconButton(
@@ -127,22 +126,41 @@ class _PerfilScreenState extends State<PerfilScreen>
         ],
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [
-            Tab(text: 'Publicações'),
-            Tab(text: 'Partidas Competitivas'),
-          ],
+          indicatorColor: Colors.white,
+          labelColor: Colors.white, // texto da aba selecionada
+          unselectedLabelColor: Colors.white70, // texto das não selecionadas
+          tabs: const [Tab(text: 'Publicações'), Tab(text: 'Partidas')],
         ),
       ),
       body: Column(
         children: [
-          SizedBox(
-            height: 150,
+          Container(
+            color: const Color(0xFF142B44),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             child: Row(
               children: [
                 CircleAvatar(
                   radius: 50,
-                  backgroundImage: NetworkImage(user?['image'] ?? ''),
+                  backgroundColor: Colors.grey[700],
+                  backgroundImage:
+                      (user?['image'] != null && user!['image'] != '')
+                          ? NetworkImage(user!['image'])
+                          : null,
+                  child:
+                      (user?['image'] == null || user!['image'] == '')
+                          ? Text(
+                            user?['username'] != null &&
+                                    user!['username'].isNotEmpty
+                                ? user!['username'][0].toUpperCase()
+                                : '?',
+                            style: const TextStyle(
+                              fontSize: 30,
+                              color: Colors.white,
+                            ),
+                          )
+                          : null,
                 ),
+
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
@@ -151,44 +169,73 @@ class _PerfilScreenState extends State<PerfilScreen>
                       Text(
                         user?['username'] ?? '',
                         style: const TextStyle(
-                          fontSize: 18,
+                          fontSize: 22,
                           fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
                       ),
+                      const SizedBox(height: 6),
                       if (user?['perfil_privado'] != 'S' ||
                           isOwnProfile ||
-                          isFriend)
-                        Text(user?['bio'] ?? ''),
+                          user?['isFriend'] == true)
+                        Text(
+                          user?['bio'] ?? '',
+                          style: const TextStyle(color: Colors.white70),
+                        ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          if (!isOwnProfile &&
+                              !(user?['perfil_privado'] == 'S' &&
+                                  user?['isFriend'] != true))
+                            ElevatedButton(
+                              onPressed:
+                                  user?['friendRequested'] == true
+                                      ? null
+                                      : _sendFriendRequest,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              ),
+                              child: Text(
+                                user?['friendRequested'] == true
+                                    ? 'Solicitado'
+                                    : 'Adicionar amigo',
+                              ),
+                            ),
+                          if (isOwnProfile)
+                            ElevatedButton(
+                              onPressed: () async {
+                                final updatedUser = await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (_) => EditProfileScreen(
+                                          currentUser: currentUser!,
+                                        ),
+                                  ),
+                                );
+                                if (updatedUser != null) {
+                                  setState(() {
+                                    user!.addAll(updatedUser);
+                                  });
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              ),
+                              child: const Text('Editar Perfil'),
+                            ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
-                if (!isOwnProfile &&
-                    !(user?['perfil_privado'] == 'S' && !isFriend))
-                  ElevatedButton(
-                    onPressed: _sendFriendRequest,
-                    child: const Text('Adicionar amigo'),
-                  ),
-                if (isOwnProfile)
-                  ElevatedButton(
-                    onPressed: () async {
-                      // Navega para a tela de edição do perfil
-                      final updatedUser = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (_) =>
-                                  EditProfileScreen(currentUser: currentUser!),
-                        ),
-                      );
-                      // Se retornou usuário atualizado, atualiza state
-                      if (updatedUser != null) {
-                        setState(() {
-                          widget.user!.addAll(updatedUser);
-                        });
-                      }
-                    },
-                    child: const Text('Editar Perfil'),
-                  ),
               ],
             ),
           ),
@@ -196,7 +243,7 @@ class _PerfilScreenState extends State<PerfilScreen>
             child: TabBarView(
               controller: _tabController,
               children: [
-                // Tab Publicações
+                // Publicações
                 Column(
                   children: [
                     if (isOwnProfile)
@@ -207,26 +254,38 @@ class _PerfilScreenState extends State<PerfilScreen>
                     Expanded(
                       child:
                           posts.isEmpty
-                              ? const Center(child: Text('Nenhuma publicação'))
+                              ? const Center(
+                                child: Text(
+                                  'Nenhuma publicação',
+                                  style: TextStyle(color: Colors.white70),
+                                ),
+                              )
                               : ListView.builder(
+                                padding: const EdgeInsets.all(8),
                                 itemCount: posts.length,
                                 itemBuilder: (_, index) {
                                   final post = posts[index];
-                                  return PostWidget(
-                                    post: post,
-                                    currentUser: currentUser!,
-                                    onDeleted: () {
-                                      _loadPosts();
-                                    },
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 4.0,
+                                    ),
+                                    child: PostWidget(
+                                      post: post,
+                                      currentUser: currentUser!,
+                                      onDeleted: _loadUser,
+                                    ),
                                   );
                                 },
                               ),
                     ),
                   ],
                 ),
-                // Tab Partidas Competitivas
+                // Partidas
                 const Center(
-                  child: Text('Nenhuma partida competitiva por enquanto'),
+                  child: Text(
+                    'Nenhuma partida competitiva por enquanto',
+                    style: TextStyle(color: Colors.white70),
+                  ),
                 ),
               ],
             ),
@@ -250,26 +309,36 @@ class _PostInputState extends State<PostInput> {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: TextField(
-            controller: _controller,
-            decoration: const InputDecoration(
-              hintText: 'O que você está pensando?',
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFF142B44),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _controller,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                hintText: 'O que você está pensando?',
+                hintStyle: TextStyle(color: Colors.white54),
+                border: InputBorder.none,
+              ),
             ),
           ),
-        ),
-        IconButton(
-          icon: const Icon(Icons.send),
-          onPressed: () {
-            if (_controller.text.isNotEmpty) {
-              widget.onSubmit(_controller.text);
-              _controller.clear();
-            }
-          },
-        ),
-      ],
+          IconButton(
+            icon: const Icon(Icons.send, color: Colors.white),
+            onPressed: () {
+              if (_controller.text.isNotEmpty) {
+                widget.onSubmit(_controller.text);
+                _controller.clear();
+              }
+            },
+          ),
+        ],
+      ),
     );
   }
 }

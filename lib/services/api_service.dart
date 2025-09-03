@@ -4,7 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
 class ApiService {
-  static const String baseUrl = 'https://adivinheganhe.com.br/api';
+  static const String baseUrl = 'http://192.168.1.67:8000/api';
   final FlutterSecureStorage storage = const FlutterSecureStorage();
 
   Future<String?> getPushToken() async {
@@ -61,7 +61,8 @@ class ApiService {
 
     final data = jsonDecode(response.body);
 
-    if (response.statusCode == 200 && data['token'] != null) {
+    if ((response.statusCode == 200 || response.statusCode == 201) &&
+        data['token'] != null) {
       await storage.write(key: 'token', value: data['token']);
       await storage.write(key: 'user', value: jsonEncode(data['user']));
     }

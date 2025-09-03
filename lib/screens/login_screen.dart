@@ -1,9 +1,7 @@
 import 'package:adivinheganhe/screens/home_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import '../services/api_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -18,10 +16,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final ApiService apiService = ApiService();
   bool loading = false;
 
-  final GoogleSignIn googleSignIn = GoogleSignIn(
-    scopes: ['email', 'profile'],
-  );
-
   void login() async {
     setState(() => loading = true);
     try {
@@ -32,19 +26,19 @@ class _LoginScreenState extends State<LoginScreen> {
       if (success) {
         final user = await apiService.getUser();
         final username = user?['name'] ?? 'Usuário';
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Login realizado!')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Login realizado!')));
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (_) => HomeScreen(loggedIn: true, username: username),
+            builder: (_) => HomeScreen(),
           ),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erro ao logar')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Erro ao logar')));
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -56,44 +50,22 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void loginWithGoogle() async {
-    setState(() => loading = true);
+    const url = 'http://adivinheganhe.com.br/api/auth/google';
     try {
-      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-      if (googleUser == null) {
-        setState(() => loading = false);
-        return;
-      }
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-
-      final response = await http.post(
-        Uri.parse('http://adivinheganhe.com.br/api/auth/google/callback'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'id_token': googleAuth.idToken}),
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final username = data['user']['name'] ?? 'Usuário';
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Login com Google realizado!')),
-        );
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => HomeScreen(loggedIn: true, username: username),
-          ),
-        );
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erro ao logar com Google')),
+          const SnackBar(
+            content: Text('Não foi possível abrir o login Google'),
+          ),
         );
       }
     } catch (e) {
-      // ScaffoldMessenger.of(context).showSnackBar(
-      //   SnackBar(content: Text('Falha no login Google: ${e.toString()}')),
-      // );
-    } finally {
-      setState(() => loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao abrir Google: ${e.toString()}')),
+      );
     }
   }
 
@@ -109,42 +81,82 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               const Text(
                 'Bem-vindo de volta!',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
               const SizedBox(height: 32),
               TextField(
                 controller: emailController,
-                decoration: const InputDecoration(hintText: 'Email', fillColor: Colors.white, filled: true),
+                decoration: InputDecoration(
+                  hintText: 'Email',
+                  fillColor: Colors.white,
+                  filled: true,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  prefixIcon: const Icon(Icons.email),
+                ),
                 keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: passwordController,
-                decoration: const InputDecoration(hintText: 'Senha', fillColor: Colors.white, filled: true),
+                decoration: InputDecoration(
+                  hintText: 'Senha',
+                  fillColor: Colors.white,
+                  filled: true,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  prefixIcon: const Icon(Icons.lock),
+                ),
                 obscureText: true,
               ),
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
+                height: 50,
                 child: ElevatedButton(
                   onPressed: loading ? null : login,
-                  child: loading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text('Login'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.greenAccent[700],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child:
+                      loading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text('Login', style: TextStyle(fontSize: 18)),
                 ),
               ),
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
+                height: 50,
                 child: ElevatedButton.icon(
                   onPressed: loginWithGoogle,
-                  icon: Image.network(
-                    'https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg',
+                  icon: Image.asset(
+                    'assets/images/google_logo.png',
                     height: 24,
                     width: 24,
                   ),
-                  label: const Text('Login com Google'),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black),
+                  label: const Text(
+                    'Login com Google',
+                    style: TextStyle(fontSize: 18),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black87,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
@@ -162,7 +174,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: const Text(
                       "Registre-se",
                       style: TextStyle(
-                        color: Colors.blueAccent,
+                        color: Colors.yellowAccent,
                         fontWeight: FontWeight.bold,
                         decoration: TextDecoration.underline,
                       ),

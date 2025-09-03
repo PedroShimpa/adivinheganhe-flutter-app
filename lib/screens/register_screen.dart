@@ -18,8 +18,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final ApiService apiService = ApiService();
   bool loading = false;
 
-  // Gera fingerprint fake (apenas para testes)
-
   Future<void> register() async {
     if (nameController.text.isEmpty ||
         usernameController.text.isEmpty ||
@@ -38,22 +36,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
         nameController.text,
         emailController.text,
         usernameController.text,
-        passwordController.text
+        passwordController.text,
       );
 
-      if (result['statusCode'] == 200 && result['token'] != null) {
-        // ✅ Agora o token e usuário já foram salvos no ApiService
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Registro realizado com sucesso!')),
-        );
+      if (result['statusCode'] == 201 && result['token'] != null) {
+        final savedUser =
+            await apiService.getUser(); // garante que está carregado
 
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (_) => HomeScreen(
-              loggedIn: true,
-              username: result['user']['name'] ?? '',
-            ),
+            builder:
+                (_) => HomeScreen(
+                  // Passa os dados carregados do storage
+                  // agora o HomeScreen não depende do construtor para pegar user/token
+                ),
           ),
         );
       } else {
@@ -62,9 +59,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Falha ao registrar: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Falha ao registrar: $e')));
     } finally {
       setState(() => loading = false);
     }
@@ -95,7 +92,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               TextField(
                 controller: usernameController,
                 decoration: const InputDecoration(
-                  labelText: 'username',
+                  labelText: 'Nome de usuario',
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -122,22 +119,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: loading ? null : register,
-                  child: loading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Text('Registrar'),
+                  child:
+                      loading
+                          ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                          : const Text('Registrar'),
                 ),
               ),
               const SizedBox(height: 12),
               TextButton(
-                onPressed: () =>
-                    Navigator.pushReplacementNamed(context, '/login'),
+                onPressed:
+                    () => Navigator.pushReplacementNamed(context, '/login'),
                 child: const Text('Já tem conta? Login'),
               ),
             ],

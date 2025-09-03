@@ -22,9 +22,8 @@ dependencies:
   just_audio: ^0.9.42
   firebase_core: ^4.1.0
   firebase_messaging: ^16.0.1
+  image_picker: ^1.2.0
   firebase_messaging_web: ^4.0.1
-
-  image_picker: ^0.8.7+6
 
 dev_dependencies:
   flutter_test:
@@ -35,6 +34,7 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+    - assets/images/google_logo.png
     - assets/icon/app_icon.png
 
 flutter_icons:

@@ -6,43 +6,44 @@ import '../services/api_service.dart';
 import 'perfil_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  final bool loggedIn;
-  // ignore: prefer_typing_uninitialized_variables
-  final user;
-  final String? username;
-  const HomeScreen({
-    super.key,
-    this.loggedIn = false,
-    this.username,
-    this.user,
-  });
+  const HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen>
-    with SingleTickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen> {
   final ApiService apiService = ApiService();
   List<dynamic> adivinhacoes = [];
   bool loading = true;
-  late TabController _tabController;
+  int _selectedIndex = 0;
+
+  Map<String, dynamic>? user;
+  String? username;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    if (widget.loggedIn) fetchAdivinhacoes();
+    _loadUser();
+    fetchAdivinhacoes();
+  }
+
+  Future<void> _loadUser() async {
+    user = await apiService.getUser();
+    username = user?['username'];
+    setState(() {}); // atualiza a tela
   }
 
   Future<void> fetchAdivinhacoes() async {
     try {
-      final ApiService apiService = ApiService();
       final token = await apiService.getToken();
+      if (token == null) throw Exception("Token não encontrado");
+
       final response = await http.get(
         Uri.parse('${ApiService.baseUrl}/adivinhacoes/index'),
         headers: {"Authorization": "Bearer $token"},
       );
+
       if (response.statusCode == 200) {
         setState(() {
           adivinhacoes = jsonDecode(response.body);
@@ -64,60 +65,87 @@ class _HomeScreenState extends State<HomeScreen>
     Navigator.pushReplacementNamed(context, '/login');
   }
 
+  void _onNavTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
   @override
-  Widget build(BuildContext context)  {
-    if (!widget.loggedIn) {
-      return const Scaffold(
-        backgroundColor: Color(0xFF0D1B2A),
-        body: Center(
+  Widget build(BuildContext context) {
+    final screens = [
+      // Aba Clássico
+      loading
+          ? const Center(child: CircularProgressIndicator(color: Colors.white))
+          : Stack(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0, bottom: 16.0),
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: adivinhacoes.length,
+                  itemBuilder: (context, index) {
+                    final jogo = adivinhacoes[index];
+                    return AdivinhacaoCard(
+                      adivinhacao: jogo,
+                      index: index,
+                      onResponder:
+                          (id, resposta, idx) => responder(id, resposta, idx),
+                    );
+                  },
+                ),
+              ),
+              Positioned(
+                bottom: 20,
+                right: 20,
+                child: Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.3),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Center(
+                    child: Text("🕹️", style: TextStyle(fontSize: 28)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+      // Aba Perfil
+      if (username != null)
+        PerfilScreen(username: username!, currentUser: user, onLogout: logout)
+      else
+        const Center(
           child: Text(
-            "Faça login para ver as adivinhações",
+            "Faça login para ver o perfil",
             style: TextStyle(color: Colors.white, fontSize: 18),
           ),
         ),
-      );
-    }
+    ];
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          "Bem-vindo, ${widget.username ?? 'Usuário'}",
-          style: TextStyle(color: Colors.white),
-        ),
-        backgroundColor: const Color(0xFF142B44),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(icon: Icon(Icons.home), text: "Home"),
-            Tab(icon: Icon(Icons.person), text: "Perfil"),
-          ],
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          loading
-              ? const Center(
-                child: CircularProgressIndicator(color: Colors.white),
-              )
-              : ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: adivinhacoes.length,
-                itemBuilder: (context, index) {
-                  final jogo = adivinhacoes[index];
-                  return AdivinhacaoCard(
-                    adivinhacao: jogo,
-                    index: index,
-                    onResponder:
-                        (id, resposta, idx) => responder(id, resposta, idx),
-                  );
-                },
-              ),
-
-          PerfilScreen(user: widget.user, onLogout: logout),
-        ],
-      ),
       backgroundColor: const Color(0xFF0D1B2A),
+      body: SafeArea(child: screens[_selectedIndex]),
+      bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: const Color(0xFF142B44),
+        selectedItemColor: Colors.white,
+        unselectedItemColor: Colors.white,
+        currentIndex: _selectedIndex,
+        onTap: _onNavTapped,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home, color: Colors.white),
+            label: 'Clássico',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person, color: Colors.white),
+            label: 'Perfil',
+          ),
+        ],
+        type: BottomNavigationBarType.fixed,
+      ),
     );
   }
 
