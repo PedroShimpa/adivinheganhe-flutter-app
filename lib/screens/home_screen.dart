@@ -14,10 +14,10 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final ApiService apiService = ApiService();
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   List<dynamic> adivinhacoes = [];
   bool loading = true;
   int _selectedIndex = 0;
-
   Map<String, dynamic>? user;
   String? username;
 
@@ -31,7 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadUser() async {
     user = await apiService.getUser();
     username = user?['username'];
-    setState(() {}); // atualiza a tela
+    setState(() {});
   }
 
   Future<void> fetchAdivinhacoes() async {
@@ -54,9 +54,8 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     } catch (e) {
       setState(() => loading = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Falha: ${e.toString()}")));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("Falha: ${e.toString()}")));
     }
   }
 
@@ -66,82 +65,104 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onNavTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    setState(() => _selectedIndex = index);
   }
 
   @override
   Widget build(BuildContext context) {
-    final screens = [
-      // Aba Clássico
-      loading
-          ? const Center(child: CircularProgressIndicator(color: Colors.white))
-          : Stack(
+    return Scaffold(
+      key: _scaffoldKey,
+      backgroundColor: const Color(0xFF0D1B2A),
+      endDrawer: Drawer(
+        child: SafeArea(
+          child: ListView(
+            padding: EdgeInsets.zero,
             children: [
-              Padding(
-                padding: const EdgeInsets.only(top: 8.0, bottom: 16.0),
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: adivinhacoes.length,
-                  itemBuilder: (context, index) {
-                    final jogo = adivinhacoes[index];
-                    return AdivinhacaoCard(
-                      adivinhacao: jogo,
-                      index: index,
-                      onResponder:
-                          (id, resposta, idx) => responder(id, resposta, idx),
-                    );
-                  },
-                ),
+              ListTile(
+                leading: const Icon(Icons.person),
+                title: const Text('Perfil'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _onNavTapped(2);
+                },
               ),
-              Positioned(
-                bottom: 20,
-                right: 20,
-                child: Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.3),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Center(
-                    child: Text("🕹️", style: TextStyle(fontSize: 28)),
-                  ),
-                ),
+              ListTile(
+                leading: const Icon(Icons.logout),
+                title: const Text('Logout'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  await logout();
+                },
               ),
             ],
           ),
-
-      // Aba Perfil
-      if (username != null)
-        PerfilScreen(username: username!, currentUser: user, onLogout: logout)
-      else
-        const Center(
-          child: Text(
-            "Faça login para ver o perfil",
-            style: TextStyle(color: Colors.white, fontSize: 18),
-          ),
         ),
-    ];
-
-    return Scaffold(
-      backgroundColor: const Color(0xFF0D1B2A),
-      body: SafeArea(child: screens[_selectedIndex]),
+      ),
+      body: SafeArea(
+        child: IndexedStack(
+          index: _selectedIndex,
+          children: [
+            loading
+                ? const Center(
+                    child: CircularProgressIndicator(color: Colors.white))
+                : Padding(
+                    padding: const EdgeInsets.only(top: 8, bottom: 16),
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: adivinhacoes.length,
+                      itemBuilder: (context, index) {
+                        final jogo = adivinhacoes[index];
+                        return AdivinhacaoCard(
+                          adivinhacao: jogo,
+                          index: index,
+                          onResponder: (id, resposta, idx) =>
+                              responder(id, resposta, idx),
+                        );
+                      },
+                    ),
+                  ),
+            const Center(
+              child: Text(
+                "Modo Online",
+                style: TextStyle(color: Colors.white, fontSize: 18),
+              ),
+            ),
+            if (username != null)
+              PerfilScreen(username: username!, currentUser: user, onLogout: logout)
+            else
+              const Center(
+                child: Text(
+                  "Faça login para ver o perfil",
+                  style: TextStyle(color: Colors.white, fontSize: 18),
+                ),
+              ),
+          ],
+        ),
+      ),
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: const Color(0xFF142B44),
         selectedItemColor: Colors.white,
         unselectedItemColor: Colors.white,
         currentIndex: _selectedIndex,
-        onTap: _onNavTapped,
+        onTap: (index) {
+          if (index == 2) {
+            _scaffoldKey.currentState?.openEndDrawer();
+          } else {
+            _onNavTapped(index);
+          }
+        },
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home, color: Colors.white),
             label: 'Clássico',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person, color: Colors.white),
-            label: 'Perfil',
+            icon: Icon(Icons.online_prediction, color: Colors.white),
+            label: 'Online',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.list, color: Colors.white),
+            label: '',
           ),
         ],
         type: BottomNavigationBarType.fixed,
@@ -172,26 +193,23 @@ class _HomeScreenState extends State<HomeScreen> {
         if (data['message'] == 'acertou') {
           showDialog(
             context: context,
-            builder:
-                (_) => AlertDialog(
-                  title: const Text("Parabéns!"),
-                  content: const Text(
-                    "Você acertou! Em breve nossos adivinistradores entrarão em contato.",
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text("OK"),
-                    ),
-                  ],
+            builder: (_) => AlertDialog(
+              title: const Text("Parabéns!"),
+              content: const Text(
+                  "Você acertou! Em breve nossos adivinistradores entrarão em contato."),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("OK"),
                 ),
+              ],
+            ),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(
-                "Resposta registrada! Palpites restantes: ${data['trys']}",
-              ),
+              content:
+                  Text("Resposta registrada! Palpites restantes: ${data['trys']}"),
             ),
           );
         }
@@ -201,9 +219,8 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Falha: ${e.toString()}")));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("Falha: ${e.toString()}")));
     }
   }
 }

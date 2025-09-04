@@ -31,9 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ).showSnackBar(const SnackBar(content: Text('Login realizado!')));
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (_) => HomeScreen(),
-          ),
+          MaterialPageRoute(builder: (_) => HomeScreen()),
         );
       } else {
         ScaffoldMessenger.of(
@@ -49,25 +47,19 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void loginWithGoogle() async {
-    const url = 'http://adivinheganhe.com.br/api/auth/google';
-    try {
-      final uri = Uri.parse(url);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Não foi possível abrir o login Google'),
-          ),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao abrir Google: ${e.toString()}')),
-      );
-    }
+void loginWithGoogle() async {
+  const url = 'https://adivinheganhe.com.br/login/google?platform=mobile';
+  final uri = Uri.parse(url);
+
+  try {
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+    // O fluxo continuará quando o deep link abrir o app novamente
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Erro ao abrir Google: $e')),
+    );
   }
+}
 
   @override
   Widget build(BuildContext context) {
