@@ -7,15 +7,9 @@ import 'package:adivinheganhe/screens/edit_profile_screen.dart';
 
 class PerfilScreen extends StatefulWidget {
   final String username;
-  final Map<String, dynamic>? currentUser;
   final VoidCallback? onLogout;
 
-  const PerfilScreen({
-    super.key,
-    required this.username,
-    this.currentUser,
-    this.onLogout,
-  });
+  const PerfilScreen({super.key, required this.username, this.onLogout});
 
   @override
   State<PerfilScreen> createState() => _PerfilScreenState();
@@ -24,6 +18,7 @@ class PerfilScreen extends StatefulWidget {
 class _PerfilScreenState extends State<PerfilScreen>
     with SingleTickerProviderStateMixin {
   final ApiService apiService = ApiService();
+  Map<String, dynamic>? currentUser; // agora mutável
   bool loading = true;
   Map<String, dynamic>? user;
   List posts = [];
@@ -33,6 +28,7 @@ class _PerfilScreenState extends State<PerfilScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _loadCurrentUser();
     _loadUser();
   }
 
@@ -41,7 +37,10 @@ class _PerfilScreenState extends State<PerfilScreen>
     try {
       final res = await http.get(
         Uri.parse('${ApiService.baseUrl}/user/${widget.username}'),
-        headers: {"Authorization": "Bearer $token"},
+        headers: {
+          "Authorization": "Bearer $token",
+          "Content-Type": "application/json",
+        },
       );
 
       if (res.statusCode == 200) {
@@ -65,11 +64,21 @@ class _PerfilScreenState extends State<PerfilScreen>
       Uri.parse(
         '${ApiService.baseUrl}/user/${user?['username']}/enviar-pedido-de-amizade',
       ),
-      headers: {'Authorization': 'Bearer $token'},
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
     );
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('Pedido de amizade enviado!')));
+  }
+
+  Future<void> _loadCurrentUser() async {
+    final u = await apiService.getUser(); // pega do storage
+    setState(() {
+      currentUser = u;
+    });
   }
 
   Future<void> _createPost(String content) async {
@@ -87,7 +96,6 @@ class _PerfilScreenState extends State<PerfilScreen>
 
   @override
   Widget build(BuildContext context) {
-    final currentUser = widget.currentUser;
     final isOwnProfile = user?['id'] == currentUser?['id'];
 
     if (loading) {
@@ -183,56 +191,58 @@ class _PerfilScreenState extends State<PerfilScreen>
                           style: const TextStyle(color: Colors.white70),
                         ),
                       const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          if (!isOwnProfile &&
-                              !(user?['perfil_privado'] == 'S' &&
-                                  user?['isFriend'] != true))
-                            ElevatedButton(
-                              onPressed:
-                                  user?['friendRequested'] == true
-                                      ? null
-                                      : _sendFriendRequest,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                              ),
-                              child: Text(
-                                user?['friendRequested'] == true
-                                    ? 'Solicitado'
-                                    : 'Adicionar amigo',
-                              ),
-                            ),
-                          if (isOwnProfile)
-                            ElevatedButton(
-                              onPressed: () async {
-                                final updatedUser = await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder:
-                                        (_) => EditProfileScreen(
-                                          currentUser: currentUser!,
-                                        ),
+                      if (!isOwnProfile && user?['isFriend'] != true)
+                        Row(
+                          children: [
+                            if (!isOwnProfile &&
+                                !(user?['perfil_privado'] == 'S' &&
+                                    user?['isFriend'] != true))
+                              ElevatedButton(
+                                onPressed:
+                                    user?['friendRequested'] == true
+                                        ? null
+                                        : _sendFriendRequest,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.green,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
                                   ),
-                                );
-                                if (updatedUser != null) {
-                                  setState(() {
-                                    user!.addAll(updatedUser);
-                                  });
-                                }
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
+                                ),
+
+                                child: Text(
+                                  user?['friendRequested'] == true
+                                      ? 'Solicitado'
+                                      : 'Adicionar amigo',
                                 ),
                               ),
-                              child: const Text('Editar Perfil'),
-                            ),
-                        ],
-                      ),
+                            if (isOwnProfile)
+                              ElevatedButton(
+                                onPressed: () async {
+                                  final updatedUser = await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (_) => EditProfileScreen(
+                                            currentUser: currentUser!,
+                                          ),
+                                    ),
+                                  );
+                                  if (updatedUser != null) {
+                                    setState(() {
+                                      user!.addAll(updatedUser);
+                                    });
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blue,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                ),
+                                child: const Text('Editar Perfil'),
+                              ),
+                          ],
+                        ),
                     ],
                   ),
                 ),

@@ -2,7 +2,7 @@ name: adivinheganhe
 description: "Projeto app nativo do Adivinhe e Ganhe."
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 1.0.0+2
 
 environment:
   sdk: ^3.7.0
@@ -24,6 +24,7 @@ dependencies:
   firebase_messaging: ^16.0.1
   image_picker: ^1.2.0
   firebase_messaging_web: ^4.0.1
+  go_router: ^16.2.1
 
 dev_dependencies:
   flutter_test:

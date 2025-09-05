@@ -1,7 +1,6 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
-import 'home_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -40,30 +39,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
 
       if (result['statusCode'] == 201 && result['token'] != null) {
-        final savedUser =
-            await apiService.getUser(); // garante que está carregado
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder:
-                (_) => HomeScreen(
-                  // Passa os dados carregados do storage
-                  // agora o HomeScreen não depende do construtor para pegar user/token
-                ),
-          ),
-        );
+        // Registro bem-sucedido, navega para Home usando GoRouter
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Registro realizado com sucesso!')),
+          );
+          context.go('/home'); // GoRouter navigation
+        }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result['message'] ?? 'Erro no registro')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(result['message'] ?? 'Erro no registro')),
+          );
+        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Falha ao registrar: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Falha ao registrar: $e')),
+        );
+      }
     } finally {
-      setState(() => loading = false);
+      if (mounted) setState(() => loading = false);
     }
   }
 
@@ -92,7 +89,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               TextField(
                 controller: usernameController,
                 decoration: const InputDecoration(
-                  labelText: 'Nome de usuario',
+                  labelText: 'Nome de usuário',
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -119,23 +116,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: loading ? null : register,
-                  child:
-                      loading
-                          ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                          : const Text('Registrar'),
+                  style: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: loading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Registrar'),
                 ),
               ),
               const SizedBox(height: 12),
               TextButton(
-                onPressed:
-                    () => Navigator.pushReplacementNamed(context, '/login'),
+                onPressed: () {
+                  context.go('/login'); // GoRouter navigation
+                },
                 child: const Text('Já tem conta? Login'),
               ),
             ],

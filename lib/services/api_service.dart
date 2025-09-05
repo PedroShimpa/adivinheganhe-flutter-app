@@ -104,13 +104,15 @@ class ApiService {
     return null;
   }
 
-  Future<void> logout() async {
+  Future<void> clearToken() async {
     await storage.delete(key: 'token');
     await storage.delete(key: 'user');
   }
 
-  Future<void> clearToken() async {
-    await storage.delete(key: 'token');
-    await storage.delete(key: 'user');
+  Future<void> logout() async {
+    try {
+      await clearToken();
+    } catch (e) {
+    }
   }
 }

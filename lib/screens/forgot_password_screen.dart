@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import 'package:go_router/go_router.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -16,16 +17,22 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   void sendResetLink() async {
     setState(() => loading = true);
 
-    final result = await apiService.forgotPassword(emailController.text);
+    try {
+      final result = await apiService.forgotPassword(emailController.text);
 
-    setState(() => loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result['message'] ?? 'Erro ao enviar link')),
+      );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(result['message'] ?? 'Erro ao enviar link')),
-    );
-
-    if (result['message'] != null) {
-      Navigator.pushReplacementNamed(context, '/login');
+      if (result['message'] != null && mounted) {
+        context.go('/login'); // Navegação via GoRouter
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Falha: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => loading = false);
     }
   }
 
@@ -38,11 +45,20 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text('Esqueci a Senha', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+              const Text(
+                'Esqueci a Senha',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               const SizedBox(height: 32),
               TextField(
                 controller: emailController,
-                decoration: const InputDecoration(hintText: 'Digite seu email'),
+                decoration: const InputDecoration(
+                  hintText: 'Digite seu email',
+                  border: OutlineInputBorder(),
+                ),
                 keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 24),
@@ -50,12 +66,26 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: loading ? null : sendResetLink,
-                  child: loading ? const CircularProgressIndicator(color: Colors.white) : const Text('Enviar link'),
+                  style: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: loading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Enviar link'),
                 ),
               ),
               const SizedBox(height: 12),
               TextButton(
-                onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
+                onPressed: () => context.go('/login'), // GoRouter navigation
                 child: const Text('Voltar para Login'),
               ),
             ],

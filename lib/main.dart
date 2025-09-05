@@ -1,16 +1,19 @@
+import 'dart:convert';
+import 'package:adivinheganhe/screens/forgot_password_screen.dart';
+import 'package:adivinheganhe/screens/perfil_screen.dart';
+import 'package:adivinheganhe/services/deep_link_service.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:go_router/go_router.dart';
 import 'package:adivinheganhe/screens/home_screen.dart';
 import 'package:adivinheganhe/screens/login_screen.dart';
 import 'package:adivinheganhe/screens/register_screen.dart';
 import 'package:adivinheganhe/services/api_service.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'dart:async';
-import 'dart:io';
-import 'package:flutter/services.dart';
 
-Future<void> main() async {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+
   runApp(const MyApp());
 }
 
@@ -22,27 +25,53 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  Uri? _initialLink;
+  bool _loadingLink = true;
+  late final GoRouter _router;
 
   @override
   void initState() {
     super.initState();
-    _getInitialLink();
+    _initApp();
   }
 
-  Future<void> _getInitialLink() async {
+  Future<void> _initApp() async {
+    // Inicializa listener para novos intents
+    DeepLinkService.initListener((uri) async {
+      await _handleDeepLink(uri);
+    });
+
+    // Captura deep link inicial
+    final initialUri = await DeepLinkService.getInitialLink();
+    if (initialUri != null) {
+      await _handleDeepLink(initialUri);
+    }
+
+    setState(() {
+      _loadingLink = false;
+    });
+  }
+
+  /// Salva token/user e navega se necessário
+  Future<void> _handleDeepLink(Uri uri) async {
     try {
-      if (Platform.isAndroid) {
-        final uri = await MethodChannel('deep_link_channel')
-            .invokeMethod<String>('getInitialLink');
-        if (uri != null) {
-          setState(() {
-            _initialLink = Uri.parse(uri);
-          });
-        }
+      final token = uri.queryParameters['token'];
+      final userJson = uri.queryParameters['user'];
+      final route = uri.queryParameters['route'];
+
+      if (token != null && userJson != null) {
+        final user = jsonDecode(userJson);
+        final apiService = ApiService();
+        await apiService.saveToken(token, user);
+      }
+
+      if (route != null) {
+        final path = route.startsWith('/') ? route : '/$route';
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _router.go('/home');
+        });
       }
     } catch (e) {
-      // ignore
+      print('Erro ao processar deep link: $e');
     }
   }
 
@@ -59,36 +88,59 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    if (_loadingLink) {
+      return const MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: Scaffold(body: Center(child: CircularProgressIndicator())),
+      );
+    }
+
+    _router = GoRouter(
+      initialLocation: '/login',
+      routes: [
+        GoRoute(
+          path: '/login',
+          builder: (context, state) => const LoginScreen(),
+        ),
+        GoRoute(
+          path: '/forgot-password',
+          builder: (context, state) => const ForgotPasswordScreen(),
+        ),
+        GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
+        GoRoute(
+          path: '/perfil/:username',
+          builder: (context, state) {
+            final username = state.pathParameters['username']!;
+            return PerfilScreen(username: username);
+          },
+        ),
+        GoRoute(
+          path: '/register',
+          builder: (context, state) => const RegisterScreen(),
+        ),
+      ],
+      redirect: (context, state) async {
+        final loginState = await _checkLogin();
+        final loggedIn = loginState['loggedIn'] ?? false;
+
+        // Se estiver logado e tentando acessar /login, vai para /home
+        if (loggedIn && state.uri.path == '/login') return '/home';
+
+        // Se não estiver logado e tentando acessar /home ou /register, vai para /login
+        if (!loggedIn &&
+            (state.uri.path == '/home' || state.uri.path == '/register')) {
+          return '/login';
+        }
+
+        return null; // sem redirecionamento
+      },
+    );
+
+    return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       title: 'Adivinhe e Ganhe',
       theme: ThemeData.light(),
-      home: Builder(builder: (context) {
-        print('link abertura');
-        print(_initialLink);
-        if (_initialLink != null &&
-            _initialLink.toString().startsWith('adivinheganhe://home')) {
-          return const HomeScreen();
-        }
-
-        return FutureBuilder<Map<String, dynamic>>(
-          future: _checkLogin(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Scaffold(
-                  body: Center(child: CircularProgressIndicator()));
-            }
-
-            final loggedIn = snapshot.data?['loggedIn'] ?? false;
-            return loggedIn ? HomeScreen() : const LoginScreen();
-          },
-        );
-      }),
-      routes: {
-        '/login': (_) => const LoginScreen(),
-        '/home': (_) => const HomeScreen(),
-        '/register': (_) => const RegisterScreen(),
-      },
+      routerConfig: _router,
     );
   }
 }
