@@ -51,8 +51,6 @@ class _PerfilScreenState extends State<PerfilScreen>
           posts = u['posts'] ?? [];
         });
       }
-    } catch (e) {
-      debugPrint("Exceção em _loadUser: $e");
     } finally {
       setState(() => loading = false);
     }

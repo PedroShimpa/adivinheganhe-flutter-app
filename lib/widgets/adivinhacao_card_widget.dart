@@ -228,8 +228,9 @@ Future<void> _abrirComentariosModal() async {
     final premio = widget.adivinhacao['premio'];
     if (premio == null ||
         premio.isEmpty ||
-        !premio.toString().startsWith("http"))
+        !premio.toString().startsWith("http")) {
       return const SizedBox.shrink();
+    }
     return ElevatedButton.icon(
       style: ElevatedButton.styleFrom(
         backgroundColor: const Color(0xFF0A2540),
@@ -242,8 +243,9 @@ Future<void> _abrirComentariosModal() async {
       label: const Text("Abrir Prêmio"),
       onPressed: () async {
         final uri = Uri.parse(premio);
-        if (await canLaunchUrl(uri))
+        if (await canLaunchUrl(uri)) {
           await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
       },
     );
   }

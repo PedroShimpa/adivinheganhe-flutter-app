@@ -197,7 +197,7 @@ class _PostWidgetState extends State<PostWidget> {
                     showModalBottomSheet(
                       context: context,
                       builder: (_) {
-                        final TextEditingController _commentController =
+                        final TextEditingController commentController =
                             TextEditingController();
                         return Column(
                           mainAxisSize: MainAxisSize.min,
@@ -230,7 +230,7 @@ class _PostWidgetState extends State<PostWidget> {
                                 children: [
                                   Expanded(
                                     child: TextField(
-                                      controller: _commentController,
+                                      controller: commentController,
                                       decoration: const InputDecoration(
                                         hintText: 'Escreva um comentário',
                                       ),
@@ -239,9 +239,9 @@ class _PostWidgetState extends State<PostWidget> {
                                   IconButton(
                                     icon: const Icon(Icons.send),
                                     onPressed: () {
-                                      if (_commentController.text.isNotEmpty) {
-                                        _comment(_commentController.text);
-                                        _commentController.clear();
+                                      if (commentController.text.isNotEmpty) {
+                                        _comment(commentController.text);
+                                        commentController.clear();
                                       }
                                     },
                                   ),

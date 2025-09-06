@@ -71,7 +71,6 @@ class _MyAppState extends State<MyApp> {
         });
       }
     } catch (e) {
-      print('Erro ao processar deep link: $e');
     }
   }
 
@@ -123,12 +122,16 @@ class _MyAppState extends State<MyApp> {
         final loginState = await _checkLogin();
         final loggedIn = loginState['loggedIn'] ?? false;
 
-        // Se estiver logado e tentando acessar /login, vai para /home
-        if (loggedIn && state.uri.path == '/login') return '/home';
+        // Se estiver logado e tentando acessar /login ou /register, vai para /home
+        if (loggedIn &&
+            (state.uri.path == '/login' || state.uri.path == '/register')) {
+          return '/home';
+        }
 
-        // Se não estiver logado e tentando acessar /home ou /register, vai para /login
-        if (!loggedIn &&
-            (state.uri.path == '/home' || state.uri.path == '/register')) {
+        // Se não estiver logado e tentando acessar páginas protegidas, manda para /login
+        final isProtectedRoute = state.uri.path.startsWith('/home') ||
+                                state.uri.path.startsWith('/perfil');
+        if (!loggedIn && isProtectedRoute) {
           return '/login';
         }
 

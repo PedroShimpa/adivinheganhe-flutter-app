@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:adivinheganhe/screens/conversas_screen.dart';
 import 'package:adivinheganhe/screens/friends_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -211,6 +212,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const FriendsScreen()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.message),
+                title: const Text('Conversas'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ConversasScreen()),
                   );
                 },
               ),

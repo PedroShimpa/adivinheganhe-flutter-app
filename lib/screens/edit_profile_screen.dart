@@ -85,7 +85,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       Navigator.pop(context, data['user']); // retorna usuário atualizado
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao atualizar perfil: ${resBody}')),
+        SnackBar(content: Text('Erro ao atualizar perfil: $resBody')),
       );
     }
 
@@ -165,7 +165,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                       // Perfil Privado
                       DropdownButtonFormField<String>(
-                        value: perfilPrivado,
+                        initialValue: perfilPrivado,
                         items: const [
                           DropdownMenuItem(value: 'N', child: Text('Não')),
                           DropdownMenuItem(value: 'S', child: Text('Sim')),

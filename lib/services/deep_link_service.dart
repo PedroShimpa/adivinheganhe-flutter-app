@@ -23,7 +23,6 @@ class DeepLinkService {
       );
       if (link != null) return Uri.parse(link);
     } catch (e) {
-      print('Erro ao obter initial link: $e');
     }
     return null;
   }
