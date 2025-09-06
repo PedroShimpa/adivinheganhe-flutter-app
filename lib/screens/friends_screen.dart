@@ -1,5 +1,6 @@
 // friends_screen.dart
 import 'dart:convert';
+import 'package:adivinheganhe/screens/chat_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:go_router/go_router.dart';
@@ -30,7 +31,10 @@ class _FriendsScreenState extends State<FriendsScreen> {
 
       final response = await http.get(
         Uri.parse('${ApiService.baseUrl}/meus-amigos'),
-        headers: {"Authorization": "Bearer $token"},
+        headers: {
+          "Authorization": "Bearer $token",
+          'Content-Type': 'application/json',
+        },
       );
 
       if (response.statusCode == 200) {
@@ -88,7 +92,15 @@ class _FriendsScreenState extends State<FriendsScreen> {
         title: const Text("Amigos"),
         backgroundColor: const Color(0xFF142B44),
         centerTitle: true,
-        titleTextStyle: TextStyle(color: Colors.white),
+        titleTextStyle: const TextStyle(color: Colors.white),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.group_add, color: Colors.white),
+            onPressed: () {
+              context.push('/friend-requests');
+            },
+          ),
+        ],
       ),
       body:
           loading
@@ -142,11 +154,14 @@ class _FriendsScreenState extends State<FriendsScreen> {
                             ],
                         onSelected: (value) {
                           if (value == 'chat') {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Abrir chat com ${friend['username']}',
-                                ),
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (_) => ChatDetailScreen(
+                                      username: friend['username'],
+                                      avatar: friend['user_photo'],
+                                    ),
                               ),
                             );
                           } else if (value == 'perfil') {

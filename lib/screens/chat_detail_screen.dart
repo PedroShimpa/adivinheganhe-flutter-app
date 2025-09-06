@@ -43,7 +43,6 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     final u = await apiService.getUser();
     setState(() => currentUser = u);
     await fetchMessages();
-    await connectWebSocket();
   }
 
   Future<void> fetchMessages() async {
@@ -53,7 +52,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
       final response = await http.get(
         Uri.parse('${ApiService.baseUrl}/chat/messages/${widget.username}'),
-        headers: {"Authorization": "Bearer $token"},
+         headers: {"Authorization": "Bearer $token",  'Content-Type': 'application/json'},
       );
 
       if (response.statusCode == 200) {
@@ -79,51 +78,6 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text("Falha: ${e.toString()}")));
     }
-  }
-
-  Future<void> connectWebSocket() async {
-    final token = await apiService.getToken();
-    final socketUrl = ApiService.socketUrl;
-    final wsUrl = Uri.parse(
-      '$socketUrl/app/teuuu9lil64ke4fvkror?protocol=7&client=flutter',
-    );
-
-    channel = WebSocketChannel.connect(
-      wsUrl,
-      // headers: {
-      //   'Authorization': 'Bearer $token',
-      //   'Content-Type': 'application/json',
-      // },
-    );
-
-    channel.stream.listen(
-      (message) {
-        final event = jsonDecode(message);
-        if (event['event'] == 'mensagem.recebida_enviada') {
-          final data = event['data'];
-          setState(() {
-            messages.add({
-              "user_id": data['senderId'],
-              "mensagem": data['message'],
-              "created_at": data['created_at'],
-            });
-          });
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (_scrollController.hasClients) {
-              _scrollController.jumpTo(
-                _scrollController.position.maxScrollExtent,
-              );
-            }
-          });
-        }
-      },
-      onError: (error) {
-        print("Erro no WebSocket: $error");
-      },
-      onDone: () {
-        print("Conexão WS encerrada");
-      },
-    );
   }
 
   Future<void> sendMessage() async {

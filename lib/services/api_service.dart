@@ -4,9 +4,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
 class ApiService {
-  // static const String baseUrl = 'https://adivinheganhe.com.br/api';
-  static const String baseUrl = 'http://192.168.1.67:8000/api';
-  static const String socketUrl = 'ws://192.168.1.67:8080';
+  static const String baseUrl = 'https://adivinheganhe.com.br/api';
+  // static const String baseUrl = 'http://192.168.1.67:8000/api';
   final FlutterSecureStorage storage = const FlutterSecureStorage();
 
   Future<String?> getPushToken() async {

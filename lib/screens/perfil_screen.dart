@@ -1,9 +1,13 @@
+import 'dart:io';
+
 import 'package:adivinheganhe/services/api_service.dart';
 import 'package:adivinheganhe/widgets/post_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:adivinheganhe/screens/edit_profile_screen.dart';
+import 'package:image_picker/image_picker.dart';
+
 
 class PerfilScreen extends StatefulWidget {
   final String username;
@@ -79,17 +83,30 @@ class _PerfilScreenState extends State<PerfilScreen>
     });
   }
 
-  Future<void> _createPost(String content) async {
+  Future<void> _createPost(String content, [String? filePath]) async {
     final token = await apiService.getToken();
-    await http.post(
+
+    var request = http.MultipartRequest(
+      'POST',
       Uri.parse('${ApiService.baseUrl}/posts/store'),
-      headers: {
-        "Authorization": "Bearer $token",
-        "Content-Type": "application/json",
-      },
-      body: json.encode({'content': content}),
     );
-    _loadUser(); // recarrega o user (com posts novos)
+    request.headers['Authorization'] = 'Bearer $token';
+
+    request.fields['content'] = content;
+
+    if (filePath != null && filePath.isNotEmpty) {
+      request.files.add(await http.MultipartFile.fromPath('file', filePath));
+    }
+
+    final response = await request.send();
+
+    if (response.statusCode == 200) {
+      _loadUser(); // recarrega os posts
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Erro ao criar post")));
+    }
   }
 
   @override
@@ -303,9 +320,8 @@ class _PerfilScreenState extends State<PerfilScreen>
     );
   }
 }
-
 class PostInput extends StatefulWidget {
-  final Function(String) onSubmit;
+  final Function(String, [String?]) onSubmit;
   const PostInput({super.key, required this.onSubmit});
 
   @override
@@ -314,39 +330,83 @@ class PostInput extends StatefulWidget {
 
 class _PostInputState extends State<PostInput> {
   final TextEditingController _controller = TextEditingController();
+  File? _selectedImage;
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+    if (picked != null) {
+      setState(() {
+        _selectedImage = File(picked.path);
+      });
+    }
+  }
+
+  void _submit() {
+    if (_controller.text.isNotEmpty || _selectedImage != null) {
+      widget.onSubmit(_controller.text, _selectedImage?.path);
+      _controller.clear();
+      setState(() => _selectedImage = null);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFF142B44),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _controller,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                hintText: 'O que você está pensando?',
-                hintStyle: TextStyle(color: Colors.white54),
-                border: InputBorder.none,
-              ),
+    return Column(
+      children: [
+        if (_selectedImage != null)
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Stack(
+              alignment: Alignment.topRight,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.file(
+                    _selectedImage!,
+                    height: 150,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close, color: Colors.red),
+                  onPressed: () => setState(() => _selectedImage = null),
+                ),
+              ],
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.send, color: Colors.white),
-            onPressed: () {
-              if (_controller.text.isNotEmpty) {
-                widget.onSubmit(_controller.text);
-                _controller.clear();
-              }
-            },
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFF142B44),
+            borderRadius: BorderRadius.circular(20),
           ),
-        ],
-      ),
+          child: Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.image, color: Colors.white),
+                onPressed: _pickImage,
+              ),
+              Expanded(
+                child: TextField(
+                  controller: _controller,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
+                    hintText: 'O que você está pensando?',
+                    hintStyle: TextStyle(color: Colors.white54),
+                    border: InputBorder.none,
+                  ),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.send, color: Colors.white),
+                onPressed: _submit,
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

@@ -275,8 +275,9 @@ Future<void> _abrirComentariosModal() async {
             Html(data: widget.adivinhacao['descricao'] ?? ''),
             const SizedBox(height: 8),
             buildPremio(),
+            if(widget.adivinhacao['expire_at_br'] != null)
             Text(
-              "Expira em: ${widget.adivinhacao['expire_at_br'] ?? 'Sem data'}",
+              "Expira em: ${widget.adivinhacao['expire_at_br']}",
               style: const TextStyle(color: Colors.redAccent),
             ),
             const SizedBox(height: 12),

@@ -29,7 +29,10 @@ class _ConversasScreenState extends State<ConversasScreen> {
 
       final response = await http.get(
         Uri.parse('${ApiService.baseUrl}/chats'),
-        headers: {"Authorization": "Bearer $token"},
+        headers: {
+          "Authorization": "Bearer $token",
+          'Content-Type': 'application/json',
+        },
       );
 
       if (response.statusCode == 200) {

@@ -104,7 +104,10 @@ class _PostWidgetState extends State<PostWidget> {
     try {
       final res = await http.post(
         Uri.parse('$baseUrl/posts/$postId/toggle-like'),
-        headers: {'Authorization': 'Bearer $token'},
+        headers: {
+          "Authorization": "Bearer $token",
+          'Content-Type': 'application/json',
+        },
       );
 
       if (res.statusCode == 200) {

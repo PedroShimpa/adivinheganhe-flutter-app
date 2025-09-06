@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:adivinheganhe/screens/forgot_password_screen.dart';
+import 'package:adivinheganhe/screens/frinend_request_screen.dart';
 import 'package:adivinheganhe/screens/perfil_screen.dart';
 import 'package:adivinheganhe/services/deep_link_service.dart';
 import 'package:flutter/material.dart';
@@ -70,8 +71,7 @@ class _MyAppState extends State<MyApp> {
           _router.go('/home');
         });
       }
-    } catch (e) {
-    }
+    } catch (e) {}
   }
 
   Future<Map<String, dynamic>> _checkLogin() async {
@@ -98,6 +98,11 @@ class _MyAppState extends State<MyApp> {
       initialLocation: '/login',
       routes: [
         GoRoute(
+          path: '/friend-requests',
+          builder: (context, state) => const FriendRequestsScreen(),
+        ),
+
+        GoRoute(
           path: '/login',
           builder: (context, state) => const LoginScreen(),
         ),
@@ -122,20 +127,19 @@ class _MyAppState extends State<MyApp> {
         final loginState = await _checkLogin();
         final loggedIn = loginState['loggedIn'] ?? false;
 
-        // Se estiver logado e tentando acessar /login ou /register, vai para /home
         if (loggedIn &&
             (state.uri.path == '/login' || state.uri.path == '/register')) {
           return '/home';
         }
 
-        // Se não estiver logado e tentando acessar páginas protegidas, manda para /login
-        final isProtectedRoute = state.uri.path.startsWith('/home') ||
-                                state.uri.path.startsWith('/perfil');
+        final isProtectedRoute =
+            state.uri.path.startsWith('/home') ||
+            state.uri.path.startsWith('/perfil');
         if (!loggedIn && isProtectedRoute) {
           return '/login';
         }
 
-        return null; // sem redirecionamento
+        return null;
       },
     );
 

@@ -1,12 +1,13 @@
 import 'dart:convert';
 import 'package:adivinheganhe/screens/conversas_screen.dart';
 import 'package:adivinheganhe/screens/friends_screen.dart';
+import 'package:adivinheganhe/screens/meus_premios_screen.dart';
+import 'package:adivinheganhe/screens/players_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:go_router/go_router.dart';
 import 'package:adivinheganhe/widgets/adivinhacao_card_widget.dart';
 import '../services/api_service.dart';
-import 'perfil_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -46,7 +47,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
       final response = await http.get(
         Uri.parse('${ApiService.baseUrl}/notificacoes'),
-        headers: {"Authorization": "Bearer $token"},
+        headers: {
+          "Authorization": "Bearer $token",
+          'Content-Type': 'application/json',
+        },
       );
 
       if (response.statusCode == 200) {
@@ -104,7 +108,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
       final response = await http.get(
         Uri.parse('${ApiService.baseUrl}/adivinhacoes/index'),
-        headers: {"Authorization": "Bearer $token"},
+        headers: {
+          "Authorization": "Bearer $token",
+          'Content-Type': 'application/json',
+        },
       );
 
       if (response.statusCode == 200) {
@@ -165,23 +172,6 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           ),
         ),
-        // Tela Online
-        const Center(
-          child: Text(
-            "Modo Online",
-            style: TextStyle(color: Colors.white, fontSize: 18),
-          ),
-        ),
-        // Perfil
-        if (username != null)
-          PerfilScreen(username: username!, onLogout: logout)
-        else
-          const Center(
-            child: Text(
-              "Faça login para ver o perfil",
-              style: TextStyle(color: Colors.white, fontSize: 18),
-            ),
-          ),
       ],
     );
   }
@@ -216,6 +206,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
               ),
               ListTile(
+                leading: const Icon(Icons.group),
+                title: const Text('Jogadores'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const PlayersScreen()),
+                  );
+                },
+              ),
+              ListTile(
                 leading: const Icon(Icons.message),
                 title: const Text('Conversas'),
                 onTap: () {
@@ -226,10 +227,23 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 },
               ),
+              ListTile(
+                leading: const Icon(Icons.emoji_events),
+                title: const Text('Meus Prêmios'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const MeusPremiosScreen(),
+                    ),
+                  );
+                },
+              ),
 
               ListTile(
                 leading: const Icon(Icons.logout),
-                title: const Text('Logout'),
+                title: const Text('Sair'),
                 onTap: () async {
                   Navigator.pop(context);
                   await logout();
@@ -246,9 +260,9 @@ class _HomeScreenState extends State<HomeScreen> {
         unselectedItemColor: Colors.white,
         currentIndex: _selectedIndex,
         onTap: (index) {
-          if (index == 3) {
+          if (index == 2) {
             _scaffoldKey.currentState?.openEndDrawer(); // Mais
-          } else if (index == 2) {
+          } else if (index == 1) {
             _showNotifications(); // Notificações
           } else {
             _onNavTapped(index);
@@ -259,10 +273,10 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icon(Icons.gamepad, color: Colors.white),
             label: 'Clássico',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.online_prediction, color: Colors.white),
-            label: 'Online',
-          ),
+          // BottomNavigationBarItem(
+          //   icon: Icon(Icons.online_prediction, color: Colors.white),
+          //   label: 'Online',
+          // ),
           BottomNavigationBarItem(
             icon: Icon(Icons.notifications, color: Colors.white),
             label: 'Notificações',
@@ -308,7 +322,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 (_) => AlertDialog(
                   title: const Text("Parabéns!"),
                   content: const Text(
-                    "Você acertou! Em breve nossos adivinistradores entrarão em contato.",
+                    "Você acertou! Em breve nossos administradores entrarão em contato.",
                   ),
                   actions: [
                     TextButton(
@@ -322,20 +336,20 @@ class _HomeScreenState extends State<HomeScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                "Resposta registrada! Palpites restantes: ${data['trys']}",
+                "Resposta incorreta! Palpites restantes: ${data['trys']}",
               ),
             ),
           );
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Erro: ${data['info'] ?? response.body}")),
+          SnackBar(content: Text("${data['info'] ?? response.body}")),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text("Falha: ${e.toString()}")));
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     }
   }
 }
