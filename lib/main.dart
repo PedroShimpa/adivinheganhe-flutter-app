@@ -49,15 +49,16 @@ class _MyAppState extends State<MyApp> {
     );
 
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-      print('Permissão concedida!');
+       final apiService = ApiService();
+       apiService.sendPushToken();
     } else if (settings.authorizationStatus == AuthorizationStatus.provisional) {
       print('Permissão provisória concedida!');
     } else {
       print('Permissão negada!');
+      return;
     }
 
-    String? token = await messaging.getToken();
-    print("FCM Token: $token");
+
   }
 
   Future<void> _initApp() async {
