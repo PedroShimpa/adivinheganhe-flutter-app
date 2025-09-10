@@ -35,24 +35,53 @@ class _MyAppState extends State<MyApp> {
     _initApp();
   }
 
+    void requestNotificationPermission() async {
+    FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+    NotificationSettings settings = await messaging.requestPermission(
+      alert: true,
+      announcement: false,
+      badge: true,
+      carPlay: false,
+      criticalAlert: false,
+      provisional: false,
+      sound: true,
+    );
+
+    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+      print('Permissão concedida!');
+    } else if (settings.authorizationStatus == AuthorizationStatus.provisional) {
+      print('Permissão provisória concedida!');
+    } else {
+      print('Permissão negada!');
+    }
+
+    String? token = await messaging.getToken();
+    print("FCM Token: $token");
+  }
+
   Future<void> _initApp() async {
-    // Inicializa listener para novos intents
     DeepLinkService.initListener((uri) async {
       await _handleDeepLink(uri);
     });
 
-    // Captura deep link inicial
     final initialUri = await DeepLinkService.getInitialLink();
     if (initialUri != null) {
       await _handleDeepLink(initialUri);
     }
+
+      final loginState = await _checkLogin();
+      final loggedIn = loginState['loggedIn'] ?? false;
+
+      if (loggedIn) {
+        await requestNotificationPermission();
+      }
 
     setState(() {
       _loadingLink = false;
     });
   }
 
-  /// Salva token/user e navega se necessário
   Future<void> _handleDeepLink(Uri uri) async {
     try {
       final token = uri.queryParameters['token'];

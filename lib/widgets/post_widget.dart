@@ -29,7 +29,6 @@ class _PostWidgetState extends State<PostWidget> {
   @override
   void initState() {
     super.initState();
-    // Inicializa contagem de likes e status de like
     likeCount = widget.post['likes_count'] ?? 0;
     liked = widget.post['liked_by_user'] ?? false;
   }
@@ -48,7 +47,6 @@ class _PostWidgetState extends State<PostWidget> {
       if (res.statusCode == 200) {
         final rawComments = json.decode(res.body)['comments'] ?? [];
 
-        // Garantir que seja lista de mapas
         comments =
             (rawComments as List)
                 .map((c) => Map<String, dynamic>.from(c))

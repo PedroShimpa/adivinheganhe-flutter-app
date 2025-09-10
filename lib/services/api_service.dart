@@ -12,6 +12,24 @@ class ApiService {
     return await FirebaseMessaging.instance.getToken();
   }
 
+  Future<bool> sendPushToken(String email, String password) async {
+    final pushToken = await getPushToken();
+    final body = {
+      'token_push_notification': pushToken,
+    };
+      final token = await ApiService().getToken();
+
+    await http.post(
+      Uri.parse('$baseUrl/user/save-token'),
+      headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+      },
+      body: jsonEncode(body),
+    );
+
+  }
+
   Future<bool> login(String email, String password) async {
     final pushToken = await getPushToken();
     final body = {
@@ -29,7 +47,6 @@ class ApiService {
     final data = jsonDecode(response.body);
 
     if (response.statusCode == 200 && data['token'] != null) {
-      // Salva token e usuário de forma segura
       await storage.write(key: 'token', value: data['token']);
       await storage.write(key: 'user', value: jsonEncode(data['user']));
       return true;
