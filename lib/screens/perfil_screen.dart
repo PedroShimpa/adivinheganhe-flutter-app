@@ -8,7 +8,6 @@ import 'dart:convert';
 import 'package:adivinheganhe/screens/edit_profile_screen.dart';
 import 'package:image_picker/image_picker.dart';
 
-
 class PerfilScreen extends StatefulWidget {
   final String username;
   final VoidCallback? onLogout;
@@ -294,11 +293,14 @@ class _PerfilScreenState extends State<PerfilScreen>
                                     padding: const EdgeInsets.symmetric(
                                       vertical: 4.0,
                                     ),
-                                    child: PostWidget(
-                                      post: post,
-                                      currentUser: currentUser!,
-                                      onDeleted: _loadUser,
-                                    ),
+                                    child:
+                                        currentUser == null
+                                            ? const SizedBox.shrink()
+                                            : PostWidget(
+                                              post: post,
+                                              currentUser: currentUser!,
+                                              onDeleted: _loadUser,
+                                            ),
                                   );
                                 },
                               ),
@@ -320,6 +322,7 @@ class _PerfilScreenState extends State<PerfilScreen>
     );
   }
 }
+
 class PostInput extends StatefulWidget {
   final Function(String, [String?]) onSubmit;
   const PostInput({super.key, required this.onSubmit});

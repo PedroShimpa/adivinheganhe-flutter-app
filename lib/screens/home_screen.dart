@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:adivinheganhe/screens/conversas_screen.dart';
 import 'package:adivinheganhe/screens/friends_screen.dart';
 import 'package:adivinheganhe/screens/meus_premios_screen.dart';
+import 'package:adivinheganhe/screens/perfil_screen.dart';
 import 'package:adivinheganhe/screens/players_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -155,7 +156,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return IndexedStack(
       index: _selectedIndex,
       children: [
-        // Tela Clássica
         Padding(
           padding: const EdgeInsets.only(top: 8, bottom: 16),
           child: ListView.builder(
@@ -172,6 +172,7 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           ),
         ),
+        PerfilScreen(username: username ?? '', onLogout: logout),
       ],
     );
   }
@@ -191,7 +192,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 title: const Text('Perfil'),
                 onTap: () {
                   Navigator.pop(context);
-                  _onNavTapped(2);
+                  _onNavTapped(1);
                 },
               ),
               ListTile(
@@ -273,10 +274,6 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icon(Icons.gamepad, color: Colors.white),
             label: 'Clássico',
           ),
-          // BottomNavigationBarItem(
-          //   icon: Icon(Icons.online_prediction, color: Colors.white),
-          //   label: 'Online',
-          // ),
           BottomNavigationBarItem(
             icon: Icon(Icons.notifications, color: Colors.white),
             label: 'Notificações',
