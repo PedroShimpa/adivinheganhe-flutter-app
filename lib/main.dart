@@ -10,6 +10,7 @@ import 'package:adivinheganhe/screens/home_screen.dart';
 import 'package:adivinheganhe/screens/login_screen.dart';
 import 'package:adivinheganhe/screens/register_screen.dart';
 import 'package:adivinheganhe/services/api_service.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,7 +36,7 @@ class _MyAppState extends State<MyApp> {
     _initApp();
   }
 
-    void requestNotificationPermission() async {
+  void requestNotificationPermission() async {
     FirebaseMessaging messaging = FirebaseMessaging.instance;
 
     NotificationSettings settings = await messaging.requestPermission(
@@ -49,16 +50,13 @@ class _MyAppState extends State<MyApp> {
     );
 
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-       final apiService = ApiService();
-       apiService.sendPushToken();
-    } else if (settings.authorizationStatus == AuthorizationStatus.provisional) {
-      print('Permissão provisória concedida!');
+      final apiService = ApiService();
+      apiService.sendPushToken();
+    } else if (settings.authorizationStatus ==
+        AuthorizationStatus.provisional) {
     } else {
-      print('Permissão negada!');
       return;
     }
-
-
   }
 
   Future<void> _initApp() async {
@@ -71,12 +69,12 @@ class _MyAppState extends State<MyApp> {
       await _handleDeepLink(initialUri);
     }
 
-      final loginState = await _checkLogin();
-      final loggedIn = loginState['loggedIn'] ?? false;
+    final loginState = await _checkLogin();
+    final loggedIn = loginState['loggedIn'] ?? false;
 
-      if (loggedIn) {
-        await requestNotificationPermission();
-      }
+    if (loggedIn) {
+       requestNotificationPermission();
+    }
 
     setState(() {
       _loadingLink = false;

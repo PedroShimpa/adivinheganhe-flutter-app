@@ -12,7 +12,7 @@ class ApiService {
     return await FirebaseMessaging.instance.getToken();
   }
 
-  Future<bool> sendPushToken(String email, String password) async {
+  Future<Null> sendPushToken() async {
     final pushToken = await getPushToken();
     final body = {
       'token_push_notification': pushToken,
