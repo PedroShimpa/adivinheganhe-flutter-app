@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -12,7 +13,7 @@ class ApiService {
     return await FirebaseMessaging.instance.getToken();
   }
 
-  Future<Null> sendPushToken() async {
+  Future<void> sendPushToken() async {
     final pushToken = await getPushToken();
     final body = {'token_push_notification': pushToken};
     final token = await ApiService().getToken();
@@ -26,7 +27,9 @@ class ApiService {
         },
         body: jsonEncode(body),
       );
-    } catch (e) {}
+    } catch (e) {
+      debugPrint('Error sending push token: $e');
+    }
   }
 
   Future<bool> login(String email, String password) async {
@@ -128,6 +131,8 @@ class ApiService {
   Future<void> logout() async {
     try {
       await clearToken();
-    } catch (e) {}
+    } catch (e) {
+      debugPrint('Error logging out: $e');
+    }
   }
 }

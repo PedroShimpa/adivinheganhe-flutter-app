@@ -38,11 +38,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadUser() async {
     try {
-
-    user = await apiService.getUser();
-    username = user?['username'];
-    setState(() {});
-    } catch (e){
+      user = await apiService.getUser();
+      username = user?['username'];
+      setState(() {});
+    } catch (e) {
       logout();
     }
   }
@@ -75,47 +74,50 @@ class _HomeScreenState extends State<HomeScreen> {
 
         showDialog(
           context: context,
-          builder:
-              (_) => AlertDialog(
-                title: const Text("Notificações"),
-                content: SizedBox(
-                  width: double.maxFinite,
-                  child:
-                      notifications.isEmpty
-                          ? const Text("Nenhuma notificação")
-                          : ListView.builder(
-                            shrinkWrap: true,
-                            itemCount: notifications.length,
-                            itemBuilder: (context, index) {
-                              final n = notifications[index];
-                              return ListTile(
-                                title: Text(
-                                  n['data']['message'] ?? 'Nova notificação',
-                                ),
-                                subtitle: Text(n['created_at_br'] ?? ''),
-                              );
-                            },
+          builder: (_) => AlertDialog(
+            title: const Text("Notificações"),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: notifications.isEmpty
+                  ? const Text("Nenhuma notificação")
+                  : ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: notifications.length,
+                      itemBuilder: (context, index) {
+                        final n = notifications[index];
+                        return ListTile(
+                          title: Text(
+                            n['data']['message'] ?? 'Nova notificação',
                           ),
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text("Fechar"),
-                  ),
-                ],
+                          subtitle: Text(n['created_at_br'] ?? ''),
+                        );
+                      },
+                    ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Fechar"),
               ),
+            ],
+          ),
         );
       } else {
         throw Exception("Erro ao buscar notificações");
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Falha: ${e.toString()}")));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Falha: ${e.toString()}")),
+        );
+      }
     }
   }
 
   Future<void> fetchAdivinhacoes() async {
+    setState(() {
+      loading = true;
+    });
     try {
       final token = await apiService.getToken();
       if (token == null) throw Exception("Token não encontrado");
@@ -129,6 +131,7 @@ class _HomeScreenState extends State<HomeScreen> {
       );
 
       if (response.statusCode == 200) {
+        if (!mounted) return;
         setState(() {
           adivinhacoes = jsonDecode(response.body);
           loading = false;
@@ -137,16 +140,16 @@ class _HomeScreenState extends State<HomeScreen> {
         throw Exception("Erro ao carregar adivinhações");
       }
     } catch (e) {
-      setState(() => loading = false);
-      logout();
+      if (mounted) {
+        setState(() => loading = false);
+        logout();
+      }
     }
   }
 
   Future<void> logout() async {
     await apiService.logout();
-
     await apiService.clearToken();
-
     if (mounted) context.go('/login');
   }
 
@@ -166,18 +169,20 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         Padding(
           padding: const EdgeInsets.only(top: 8, bottom: 16),
-          child: ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: adivinhacoes.length,
-            itemBuilder: (context, index) {
-              final jogo = adivinhacoes[index];
-              return AdivinhacaoCard(
-                adivinhacao: jogo,
-                index: index,
-                onResponder:
-                    (id, resposta, idx) => responder(id, resposta, idx),
-              );
-            },
+          child: RefreshIndicator(
+            onRefresh: fetchAdivinhacoes,
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: adivinhacoes.length,
+              itemBuilder: (context, index) {
+                final jogo = adivinhacoes[index];
+                return AdivinhacaoCard(
+                  adivinhacao: jogo,
+                  index: index,
+                  onResponder: (id, resposta, idx) => responder(id, resposta, idx),
+                );
+              },
+            ),
           ),
         ),
         PerfilScreen(username: username ?? '', onLogout: logout),
@@ -249,9 +254,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 },
               ),
-
               const Divider(),
-
               ListTile(
                 leading: const Icon(Icons.shopping_cart),
                 title: const Text('Comprar Palpites'),
@@ -284,9 +287,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   _openUrl('https://adivinheganhe.com.br/ranking-classico');
                 },
               ),
-
               const Divider(),
-
               ListTile(
                 leading: const Icon(Icons.logout),
                 title: const Text('Sair'),
@@ -360,19 +361,18 @@ class _HomeScreenState extends State<HomeScreen> {
         if (data['message'] == 'acertou') {
           showDialog(
             context: context,
-            builder:
-                (_) => AlertDialog(
-                  title: const Text("Parabéns!"),
-                  content: const Text(
-                    "Você acertou! Em breve nossos administradores entrarão em contato.",
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text("OK"),
-                    ),
-                  ],
+            builder: (_) => AlertDialog(
+              title: const Text("Parabéns!"),
+              content: const Text(
+                "Você acertou! Em breve nossos administradores entrarão em contato.",
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("OK"),
                 ),
+              ],
+            ),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -389,9 +389,11 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+      }
     }
   }
 }

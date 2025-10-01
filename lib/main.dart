@@ -1,6 +1,7 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'package:adivinheganhe/screens/forgot_password_screen.dart';
-import 'package:adivinheganhe/screens/frinend_request_screen.dart';
+import 'package:adivinheganhe/screens/friend_request_screen.dart';
 import 'package:adivinheganhe/screens/perfil_screen.dart';
 import 'package:adivinheganhe/services/deep_link_service.dart';
 import 'package:flutter/material.dart';
@@ -98,7 +99,9 @@ class _MyAppState extends State<MyApp> {
           _router.go('/home');
         });
       }
-    } catch (e) {}
+    } catch (e) {
+      debugPrint('Error handling deep link: $e');
+    }
   }
 
   Future<Map<String, dynamic>> _checkLogin() async {
