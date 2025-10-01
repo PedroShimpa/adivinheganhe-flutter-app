@@ -14,20 +14,19 @@ class ApiService {
 
   Future<Null> sendPushToken() async {
     final pushToken = await getPushToken();
-    final body = {
-      'token_push_notification': pushToken,
-    };
-      final token = await ApiService().getToken();
+    final body = {'token_push_notification': pushToken};
+    final token = await ApiService().getToken();
 
-    await http.post(
-      Uri.parse('$baseUrl/user/save-token'),
-      headers: {
+    try {
+      await http.post(
+        Uri.parse('$baseUrl/user/save-token'),
+        headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
-      },
-      body: jsonEncode(body),
-    );
-
+        },
+        body: jsonEncode(body),
+      );
+    } catch (e) {}
   }
 
   Future<bool> login(String email, String password) async {
@@ -129,7 +128,6 @@ class ApiService {
   Future<void> logout() async {
     try {
       await clearToken();
-    } catch (e) {
-    }
+    } catch (e) {}
   }
 }

@@ -18,19 +18,16 @@ class PerfilScreen extends StatefulWidget {
   State<PerfilScreen> createState() => _PerfilScreenState();
 }
 
-class _PerfilScreenState extends State<PerfilScreen>
-    with SingleTickerProviderStateMixin {
+class _PerfilScreenState extends State<PerfilScreen> {
   final ApiService apiService = ApiService();
-  Map<String, dynamic>? currentUser; // agora mutável
+  Map<String, dynamic>? currentUser;
   bool loading = true;
   Map<String, dynamic>? user;
   List posts = [];
-  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
     _loadCurrentUser();
     _loadUser();
   }
@@ -45,17 +42,20 @@ class _PerfilScreenState extends State<PerfilScreen>
           "Content-Type": "application/json",
         },
       );
-
-      if (res.statusCode == 200) {
-        final data = json.decode(res.body);
-        final u = data['user'];
-        setState(() {
-          user = u;
-          posts = u['posts'] ?? [];
-        });
+      try {
+        if (res.statusCode == 200) {
+          final data = json.decode(res.body);
+          final u = data['user'];
+          setState(() {
+            user = u;
+            posts = u['posts'] ?? [];
+          });
+        }
+      } finally {
+        setState(() => loading = false);
       }
-    } finally {
-      setState(() => loading = false);
+    } catch (e) {
+      widget.onLogout;
     }
   }
 
@@ -142,17 +142,10 @@ class _PerfilScreenState extends State<PerfilScreen>
         actions: [
           if (isOwnProfile)
             IconButton(
-              icon: const Icon(Icons.logout),
+              icon: const Icon(Icons.logout, color: Colors.white),
               onPressed: widget.onLogout,
             ),
         ],
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: Colors.white,
-          labelColor: Colors.white, // texto da aba selecionada
-          unselectedLabelColor: Colors.white70, // texto das não selecionadas
-          tabs: const [Tab(text: 'Publicações'), Tab(text: 'Partidas')],
-        ),
       ),
       body: Column(
         children: [
@@ -182,7 +175,6 @@ class _PerfilScreenState extends State<PerfilScreen>
                           )
                           : null,
                 ),
-
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
@@ -205,57 +197,50 @@ class _PerfilScreenState extends State<PerfilScreen>
                           style: const TextStyle(color: Colors.white70),
                         ),
                       const SizedBox(height: 6),
-                      if (!isOwnProfile && user?['isFriend'] != true)
-                        Row(
-                          children: [
-                            if (!isOwnProfile &&
-                                !(user?['perfil_privado'] == 'S' &&
-                                    user?['isFriend'] != true))
-                              ElevatedButton(
-                                onPressed:
-                                    user?['friendRequested'] == true
-                                        ? null
-                                        : _sendFriendRequest,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.green,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                ),
 
-                                child: Text(
-                                  user?['friendRequested'] == true
-                                      ? 'Solicitado'
-                                      : 'Adicionar amigo',
-                                ),
-                              ),
-                            if (isOwnProfile)
-                              ElevatedButton(
-                                onPressed: () async {
-                                  final updatedUser = await Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder:
-                                          (_) => EditProfileScreen(
-                                            currentUser: currentUser!,
-                                          ),
+                      if (isOwnProfile)
+                        ElevatedButton(
+                          onPressed: () async {
+                            final updatedUser = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (_) => EditProfileScreen(
+                                      currentUser: currentUser!,
                                     ),
-                                  );
-                                  if (updatedUser != null) {
-                                    setState(() {
-                                      user!.addAll(updatedUser);
-                                    });
-                                  }
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blue,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                ),
-                                child: const Text('Editar Perfil'),
                               ),
-                          ],
+                            );
+                            if (updatedUser != null) {
+                              setState(() {
+                                user!.addAll(updatedUser);
+                              });
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ),
+                          child: const Text('Editar Perfil'),
+                        )
+                      else if (user?['isFriend'] != true)
+                        ElevatedButton(
+                          onPressed:
+                              user?['friendRequested'] == true
+                                  ? null
+                                  : _sendFriendRequest,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ),
+                          child: Text(
+                            user?['friendRequested'] == true
+                                ? 'Solicitado'
+                                : 'Adicionar amigo',
+                          ),
                         ),
                     ],
                   ),
@@ -264,55 +249,42 @@ class _PerfilScreenState extends State<PerfilScreen>
             ),
           ),
           Expanded(
-            child: TabBarView(
-              controller: _tabController,
+            child: Column(
               children: [
-                // Publicações
-                Column(
-                  children: [
-                    if (isOwnProfile)
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: PostInput(onSubmit: _createPost),
-                      ),
-                    Expanded(
-                      child:
-                          posts.isEmpty
-                              ? const Center(
-                                child: Text(
-                                  'Nenhuma publicação',
-                                  style: TextStyle(color: Colors.white70),
-                                ),
-                              )
-                              : ListView.builder(
-                                padding: const EdgeInsets.all(8),
-                                itemCount: posts.length,
-                                itemBuilder: (_, index) {
-                                  final post = posts[index];
-                                  return Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 4.0,
-                                    ),
-                                    child:
-                                        currentUser == null
-                                            ? const SizedBox.shrink()
-                                            : PostWidget(
-                                              post: post,
-                                              currentUser: currentUser!,
-                                              onDeleted: _loadUser,
-                                            ),
-                                  );
-                                },
-                              ),
-                    ),
-                  ],
-                ),
-                // Partidas
-                const Center(
-                  child: Text(
-                    'Nenhuma partida competitiva por enquanto',
-                    style: TextStyle(color: Colors.white70),
+                if (isOwnProfile)
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: PostInput(onSubmit: _createPost),
                   ),
+                Expanded(
+                  child:
+                      posts.isEmpty
+                          ? const Center(
+                            child: Text(
+                              'Nenhuma publicação',
+                              style: TextStyle(color: Colors.white70),
+                            ),
+                          )
+                          : ListView.builder(
+                            padding: const EdgeInsets.all(8),
+                            itemCount: posts.length,
+                            itemBuilder: (_, index) {
+                              final post = posts[index];
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 4.0,
+                                ),
+                                child:
+                                    currentUser == null
+                                        ? const SizedBox.shrink()
+                                        : PostWidget(
+                                          post: post,
+                                          currentUser: currentUser!,
+                                          onDeleted: _loadUser,
+                                        ),
+                              );
+                            },
+                          ),
                 ),
               ],
             ),

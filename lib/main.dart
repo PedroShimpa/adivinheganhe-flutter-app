@@ -94,7 +94,6 @@ class _MyAppState extends State<MyApp> {
       }
 
       if (route != null) {
-        final path = route.startsWith('/') ? route : '/$route';
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _router.go('/home');
         });

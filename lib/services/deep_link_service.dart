@@ -2,7 +2,6 @@ import 'package:flutter/services.dart';
 class DeepLinkService {
   static const MethodChannel _channel = MethodChannel('adivinheganhe/deeplink');
 
-  /// Inicializa listener para novos intents
   static void initListener(Function(Uri uri) onLinkReceived) {
     _channel.setMethodCallHandler((call) async {
       if (call.method == 'newIntent') {
@@ -15,7 +14,6 @@ class DeepLinkService {
     });
   }
 
-  /// Retorna deep link que abriu o app
   static Future<Uri?> getInitialLink() async {
     try {
       final String? link = await _channel.invokeMethod<String>(

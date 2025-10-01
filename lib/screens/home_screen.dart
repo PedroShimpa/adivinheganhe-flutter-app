@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:go_router/go_router.dart';
 import 'package:adivinheganhe/widgets/adivinhacao_card_widget.dart';
 import '../services/api_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -36,9 +37,21 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadUser() async {
+    try {
+
     user = await apiService.getUser();
     username = user?['username'];
     setState(() {});
+    } catch (e){
+      logout();
+    }
+  }
+
+  Future<void> _openUrl(String url) async {
+    final Uri uri = Uri.parse(url);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      throw Exception('Não foi possível abrir $url');
+    }
   }
 
   Future<void> _showNotifications() async {
@@ -125,20 +138,15 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     } catch (e) {
       setState(() => loading = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Falha: ${e.toString()}")));
+      logout();
     }
   }
 
   Future<void> logout() async {
-    // 1. Chama o endpoint de logout no backend (se houver)
     await apiService.logout();
 
-    // 2. Limpa localmente o token e o usuário
     await apiService.clearToken();
 
-    // 3. Redireciona para login usando GoRouter
     if (mounted) context.go('/login');
   }
 
@@ -241,6 +249,43 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 },
               ),
+
+              const Divider(),
+
+              ListTile(
+                leading: const Icon(Icons.shopping_cart),
+                title: const Text('Comprar Palpites'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _openUrl('https://adivinheganhe.com.br/palpites/comprar');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.info),
+                title: const Text('Sobre'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _openUrl('https://adivinheganhe.com.br/sobre');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.support_agent),
+                title: const Text('Suporte'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _openUrl('https://adivinheganhe.com.br/suporte');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.leaderboard),
+                title: const Text('Ranking'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _openUrl('https://adivinheganhe.com.br/ranking-classico');
+                },
+              ),
+
+              const Divider(),
 
               ListTile(
                 leading: const Icon(Icons.logout),
