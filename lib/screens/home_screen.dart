@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:go_router/go_router.dart';
 import 'package:adivinheganhe/widgets/adivinhacao_card_widget.dart';
+import 'package:adivinheganhe/widgets/admob_banner_widget.dart';
 import '../services/api_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -167,23 +168,32 @@ class _HomeScreenState extends State<HomeScreen> {
     return IndexedStack(
       index: _selectedIndex,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 8, bottom: 16),
-          child: RefreshIndicator(
-            onRefresh: fetchAdivinhacoes,
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: adivinhacoes.length,
-              itemBuilder: (context, index) {
-                final jogo = adivinhacoes[index];
-                return AdivinhacaoCard(
-                  adivinhacao: jogo,
-                  index: index,
-                  onResponder: (id, resposta, idx) => responder(id, resposta, idx),
-                );
-              },
+        Column(
+          children: [
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 8, bottom: 16),
+                child: RefreshIndicator(
+                  onRefresh: fetchAdivinhacoes,
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: adivinhacoes.length,
+                    itemBuilder: (context, index) {
+                      final jogo = adivinhacoes[index];
+                      return AdivinhacaoCard(
+                        adivinhacao: jogo,
+                        index: index,
+                        onResponder: (id, resposta, idx) => responder(id, resposta, idx),
+                      );
+                    },
+                  ),
+                ),
+              ),
             ),
-          ),
+            // AdMob Banner
+            const SizedBox(height: 8),
+            const AdmobBannerWidget(adUnitId: 'ca-app-pub-2128338486173774/1234567890'),
+          ],
         ),
         PerfilScreen(username: username ?? '', onLogout: logout),
       ],

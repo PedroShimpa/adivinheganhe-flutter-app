@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:developer';
 import 'package:adivinheganhe/screens/forgot_password_screen.dart';
 import 'package:adivinheganhe/screens/friend_request_screen.dart';
 import 'package:adivinheganhe/screens/perfil_screen.dart';
@@ -13,9 +12,14 @@ import 'package:adivinheganhe/screens/register_screen.dart';
 import 'package:adivinheganhe/services/api_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+
+  // Initialize Google Mobile Ads SDK
+  await MobileAds.instance.initialize();
 
   runApp(const MyApp());
 }
@@ -29,7 +33,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   bool _loadingLink = true;
-  late final GoRouter _router;
+  GoRouter? _router;
 
   @override
   void initState() {
@@ -96,7 +100,7 @@ class _MyAppState extends State<MyApp> {
 
       if (route != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          _router.go('/home');
+          _router!.go('/home');
         });
       }
     } catch (e) {
@@ -124,7 +128,7 @@ class _MyAppState extends State<MyApp> {
       );
     }
 
-    _router = GoRouter(
+    _router ??= GoRouter(
       initialLocation: '/login',
       routes: [
         GoRoute(

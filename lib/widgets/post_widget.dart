@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:adivinheganhe/services/api_service.dart';
+import 'package:adivinheganhe/models/comment.dart';
+import 'package:adivinheganhe/services/post_service.dart';
 
 class PostWidget extends StatefulWidget {
   final Map<String, dynamic> post;
@@ -20,11 +19,11 @@ class PostWidget extends StatefulWidget {
 }
 
 class _PostWidgetState extends State<PostWidget> {
-  List comments = [];
+  List<Comment> comments = [];
   bool liked = false;
   int likeCount = 0;
   bool commentsLoaded = false;
-  final baseUrl = ApiService.baseUrl;
+  final PostService _postService = PostService();
 
   @override
   void initState() {
@@ -35,186 +34,146 @@ class _PostWidgetState extends State<PostWidget> {
 
   Future<void> _loadComments() async {
     if (commentsLoaded) return;
-    final token = await ApiService().getToken();
-    final postId = widget.post['id'];
     try {
-      final res = await http.get(
-        Uri.parse('$baseUrl/posts/comments/$postId'),
-        headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
-      );
-      if (res.statusCode == 200) {
-        final rawComments = json.decode(res.body) ?? [];
-        comments = (rawComments as List).map((c) => Map<String, dynamic>.from(c)).toList();
-        setState(() => commentsLoaded = true);
-      } else {
+      final loadedComments = await _postService.loadComments(widget.post['id']);
+      setState(() {
+        comments = loadedComments;
+        commentsLoaded = true;
+      });
+    } catch (e) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erro ao carregar comentários')),
+          SnackBar(content: Text('Erro ao carregar comentários: $e')),
         );
       }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao carregar comentários: $e')),
-      );
-    }
-  }
-
-  Future<void> _comment(String content) async {
-    final postId = widget.post['id'];
-    try {
-      final token = await ApiService().getToken();
-      final res = await http.post(
-        Uri.parse('$baseUrl/posts/comment/$postId'),
-        headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
-        body: json.encode({'content': content}),
-      );
-      if (res.statusCode == 200) {
-        setState(() => commentsLoaded = false);
-        _loadComments();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erro ao enviar comentário')),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao enviar comentário: $e')));
     }
   }
 
   Future<void> _toggleLike() async {
-    final token = await ApiService().getToken();
-    final postId = widget.post['id'];
     try {
-      final res = await http.post(
-        Uri.parse('$baseUrl/posts/$postId/toggle-like'),
-        headers: {"Authorization": "Bearer $token", 'Content-Type': 'application/json'},
-      );
-      if (res.statusCode == 200) {
-        setState(() {
-          liked = !liked;
-          likeCount += liked ? 1 : -1;
-        });
-      }
+      await _postService.toggleLike(widget.post['id']);
+      setState(() {
+        liked = !liked;
+        likeCount += liked ? 1 : -1;
+      });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao curtir/descurtir: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao curtir/descurtir: $e')),
+        );
+      }
     }
   }
 
   Future<void> _deletePost() async {
-    final postId = widget.post['id'];
     try {
-      final res = await http.delete(
-        Uri.parse('$baseUrl/posts/delete/$postId'),
-        headers: {'Authorization': 'Bearer ${widget.currentUser['token']}'},
-      );
-      if (res.statusCode == 200) {
-        if (widget.onDeleted != null) widget.onDeleted!();
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Post deletado')));
+      await _postService.deletePost(widget.post['id']);
+      if (widget.onDeleted != null) widget.onDeleted!();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Post deletado')),
+        );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao deletar post: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao deletar post: $e')),
+        );
+      }
     }
   }
-Future<void> _abrirComentariosModal() async {
-  await _loadComments();
-  if (!mounted) return;
-  final comentarioController = TextEditingController();
+  Future<void> _abrirComentariosModal() async {
+    await _loadComments();
+    if (!mounted) return;
+    final comentarioController = TextEditingController();
 
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
-    builder: (ctx) => StatefulBuilder(
-      builder: (ctxModal, setModalState) => Padding(
-        padding: EdgeInsets.only(
-          left: 16,
-          right: 16,
-          top: 16,
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              "Comentários",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            if (!commentsLoaded)
-              const Center(child: CircularProgressIndicator())
-            else if (comments.isEmpty)
-              const Text("Nenhum comentário ainda.")
-            else
-              SizedBox(
-                height: 300,
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: comments.length,
-                  itemBuilder: (ctx, i) {
-                    final c = comments[i];
-                    return ListTile(
-                      leading: CircleAvatar(
-                        backgroundImage: c['user_photo'] != null
-                            ? NetworkImage(c['user_photo'])
-                            : null,
-                        child: c['user_photo'] == null
-                            ? const Icon(Icons.person)
-                            : null,
-                      ),
-                      title: Text(c['usuario'] ?? 'Anônimo'),
-                      subtitle: Text(c['body'] ?? ''),
-                    );
-                  },
-                ),
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctxModal, setModalState) => Padding(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 16,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                "Comentários",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: comentarioController,
-                    decoration: const InputDecoration(
-                      hintText: "Adicionar comentário...",
-                      border: OutlineInputBorder(),
-                    ),
+              const SizedBox(height: 10),
+              if (!commentsLoaded)
+                const Center(child: CircularProgressIndicator())
+              else if (comments.isEmpty)
+                const Text("Nenhum comentário ainda.")
+              else
+                SizedBox(
+                  height: 300,
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: comments.length,
+                    itemBuilder: (ctx, i) {
+                      final c = comments[i];
+                      return ListTile(
+                        leading: CircleAvatar(
+                          backgroundImage: c.userPhoto != null
+                              ? NetworkImage(c.userPhoto!)
+                              : null,
+                          child: c.userPhoto == null
+                              ? const Icon(Icons.person)
+                              : null,
+                        ),
+                        title: Text(c.usuario),
+                        subtitle: Text(c.body),
+                      );
+                    },
                   ),
                 ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: () async {
-                    final body = comentarioController.text.trim();
-                    if (body.isEmpty) return;
-                    final postId = widget.post['id'];
-                    final token = await ApiService().getToken();
-                    try {
-                      final resp = await http.post(
-                        Uri.parse("$baseUrl/posts/comment/$postId"),
-                        headers: {
-                          "Authorization": "Bearer $token",
-                          "Content-Type": "application/json",
-                        },
-                        body: json.encode({"content": body}),
-                      );
-                      if (resp.statusCode == 200 || resp.statusCode == 201) {
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: comentarioController,
+                      decoration: const InputDecoration(
+                        hintText: "Adicionar comentário...",
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: () async {
+                      final body = comentarioController.text.trim();
+                      if (body.isEmpty) return;
+                      try {
+                        await _postService.addComment(widget.post['id'], body);
                         comentarioController.clear();
-                        final newComment = json.decode(resp.body);
-                        setModalState(() {
-                          comments.add(newComment);
-                        });
+                        // Reload comments
+                        setState(() => commentsLoaded = false);
+                        await _loadComments();
+                        setModalState(() {});
+                      } catch (e) {
+                        // Error handled in service
                       }
-                    } catch (e) {}
-                  },
-                  child: const Text("Enviar"),
-                ),
-              ],
-            ),
-          ],
+                    },
+                    child: const Text("Enviar"),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
 
   @override

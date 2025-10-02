@@ -91,6 +91,37 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  Widget _buildFeatureIcon(IconData icon, String label) {
+    return Column(
+      children: [
+        Container(
+          width: 60,
+          height: 60,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.yellowAccent.withOpacity(0.5), width: 1),
+          ),
+          child: Icon(
+            icon,
+            color: Colors.yellowAccent,
+            size: 30,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: Colors.white70,
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -108,10 +139,27 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                // App Logo
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withOpacity(0.1),
+                    border: Border.all(color: Colors.yellowAccent, width: 2),
+                  ),
+                  child: ClipOval(
+                    child: Image.asset(
+                      'assets/icon/app_icon.png',
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
                 const Text(
                   'Adivinhe e Ganhe!',
                   style: TextStyle(
-                    fontSize: 36,
+                    fontSize: 32,
                     fontWeight: FontWeight.bold,
                     color: Colors.yellowAccent,
                     shadows: [
@@ -123,6 +171,28 @@ class _LoginScreenState extends State<LoginScreen> {
                     ],
                   ),
                 ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Teste seu conhecimento e ganhe prêmios incríveis!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white70,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                // Key Features
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildFeatureIcon(Icons.emoji_events, 'Ganhe Prêmios'),
+                    _buildFeatureIcon(Icons.school, 'Aprenda'),
+                    _buildFeatureIcon(Icons.leaderboard, 'Ranking'),
+                  ],
+                ),
+         
+            
                 const SizedBox(height: 32),
                 _buildTextField(emailController, "Email", Icons.email,
                     keyboardType: TextInputType.emailAddress),
