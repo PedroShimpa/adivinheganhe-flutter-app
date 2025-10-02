@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:go_router/go_router.dart';
 import '../services/api_service.dart';
+import 'package:adivinheganhe/widgets/admob_banner_widget.dart';
 
 class FriendsScreen extends StatefulWidget {
   const FriendsScreen({super.key});
@@ -102,77 +103,87 @@ class _FriendsScreenState extends State<FriendsScreen> {
           ),
         ],
       ),
-      body:
-          loading
-              ? const Center(child: CircularProgressIndicator())
-              : friends.isEmpty
-              ? const Center(
-                child: Text(
-                  "Nenhum amigo encontrado",
-                  style: TextStyle(color: Colors.white70),
-                ),
-              )
-              : ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: friends.length,
-                itemBuilder: (context, index) {
-                  final friend = friends[index];
-                  return Card(
-                    color: const Color(0xFF1B2D4A),
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: ListTile(
-                      leading: _buildAvatar(friend),
-                      title: Text(
-                        friend['username'],
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
+      body: Column(
+        children: [
+          Expanded(
+            child:
+                loading
+                    ? const Center(child: CircularProgressIndicator())
+                    : friends.isEmpty
+                    ? const Center(
+                      child: Text(
+                        "Nenhum amigo encontrado",
+                        style: TextStyle(color: Colors.white70),
                       ),
-                      trailing: PopupMenuButton(
-                        icon: const Icon(Icons.more_vert, color: Colors.white),
-                        color: const Color(0xFF1B2D4A),
-                        itemBuilder:
-                            (context) => [
-                              const PopupMenuItem(
-                                value: 'chat',
-                                child: Text(
-                                  'Conversar',
-                                  style: TextStyle(color: Colors.white),
-                                ),
+                    )
+                    : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: friends.length,
+                      itemBuilder: (context, index) {
+                        final friend = friends[index];
+                        return Card(
+                          color: const Color(0xFF1B2D4A),
+                          margin: const EdgeInsets.symmetric(vertical: 8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: ListTile(
+                            leading: _buildAvatar(friend),
+                            title: Text(
+                              friend['username'],
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
                               ),
-                              const PopupMenuItem(
-                                value: 'perfil',
-                                child: Text(
-                                  'Ver Perfil',
-                                  style: TextStyle(color: Colors.white),
-                                ),
+                            ),
+                            trailing: PopupMenuButton(
+                              icon: const Icon(
+                                Icons.more_vert,
+                                color: Colors.white,
                               ),
-                            ],
-                        onSelected: (value) {
-                          if (value == 'chat') {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (_) => ChatDetailScreen(
-                                      username: friend['username'],
-                                      avatar: friend['user_photo'],
+                              color: const Color(0xFF1B2D4A),
+                              itemBuilder:
+                                  (context) => [
+                                    const PopupMenuItem(
+                                      value: 'chat',
+                                      child: Text(
+                                        'Conversar',
+                                        style: TextStyle(color: Colors.white),
+                                      ),
                                     ),
-                              ),
-                            );
-                          } else if (value == 'perfil') {
-                            context.push('/perfil/${friend['username']}');
-                          }
-                        },
-                      ),
+                                    const PopupMenuItem(
+                                      value: 'perfil',
+                                      child: Text(
+                                        'Ver Perfil',
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                    ),
+                                  ],
+                              onSelected: (value) {
+                                if (value == 'chat') {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (_) => ChatDetailScreen(
+                                            username: friend['username'],
+                                            avatar: friend['user_photo'],
+                                          ),
+                                    ),
+                                  );
+                                } else if (value == 'perfil') {
+                                  context.push('/perfil/${friend['username']}');
+                                }
+                              },
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
+          ),
+          const AdmobBannerWidget(adUnitId: 'ca-app-pub-2128338486173774/2391858728'),
+        ],
+      ),
     );
   }
 }

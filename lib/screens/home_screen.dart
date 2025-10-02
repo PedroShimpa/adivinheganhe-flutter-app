@@ -192,7 +192,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             // AdMob Banner
             const SizedBox(height: 8),
-            const AdmobBannerWidget(adUnitId: 'ca-app-pub-2128338486173774/1234567890'),
+            const AdmobBannerWidget(adUnitId: 'ca-app-pub-2128338486173774/2391858728'),
           ],
         ),
         PerfilScreen(username: username ?? '', onLogout: logout),

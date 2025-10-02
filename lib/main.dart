@@ -13,6 +13,7 @@ import 'package:adivinheganhe/services/api_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:adivinheganhe/services/app_open_ad_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,6 +35,8 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   bool _loadingLink = true;
   GoRouter? _router;
+  bool _adShown = false;
+  bool _loggedIn = false;
 
   @override
   void initState() {
@@ -76,9 +79,11 @@ class _MyAppState extends State<MyApp> {
 
     final loginState = await _checkLogin();
     final loggedIn = loginState['loggedIn'] ?? false;
+    _loggedIn = loggedIn;
 
     if (loggedIn) {
        requestNotificationPermission();
+       AppOpenAdService().loadAd();
     }
 
     setState(() {
@@ -176,6 +181,13 @@ class _MyAppState extends State<MyApp> {
         return null;
       },
     );
+
+    if (!_adShown && _loggedIn) {
+      _adShown = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        AppOpenAdService().showAdIfAvailable();
+      });
+    }
 
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,

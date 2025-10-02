@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:adivinheganhe/screens/edit_profile_screen.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:adivinheganhe/widgets/admob_banner_widget.dart';
 
 class PerfilScreen extends StatefulWidget {
   final String username;
@@ -286,6 +287,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
                             },
                           ),
                 ),
+                const AdmobBannerWidget(adUnitId: 'ca-app-pub-2128338486173774/2391858728'),
               ],
             ),
           ),
