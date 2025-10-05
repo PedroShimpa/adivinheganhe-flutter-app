@@ -17,10 +17,19 @@ import 'package:adivinheganhe/services/app_open_ad_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
 
-  // Initialize Google Mobile Ads SDK
-  await MobileAds.instance.initialize();
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    print('Failed to initialize Firebase: $e');
+  }
+
+  try {
+    // Initialize Google Mobile Ads SDK
+    await MobileAds.instance.initialize();
+  } catch (e) {
+    print('Failed to initialize Mobile Ads: $e');
+  }
 
   runApp(const MyApp());
 }
@@ -36,7 +45,7 @@ class _MyAppState extends State<MyApp> {
   bool _loadingLink = true;
   GoRouter? _router;
   bool _adShown = false;
-  bool _loggedIn = false;
+  bool _isLoggedIn = false;
 
   @override
   void initState() {
@@ -68,27 +77,31 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> _initApp() async {
-    DeepLinkService.initListener((uri) async {
-      await _handleDeepLink(uri);
-    });
+    try {
+      DeepLinkService.initListener((uri) async {
+        await _handleDeepLink(uri);
+      });
 
-    final initialUri = await DeepLinkService.getInitialLink();
-    if (initialUri != null) {
-      await _handleDeepLink(initialUri);
+      final initialUri = await DeepLinkService.getInitialLink();
+      if (initialUri != null) {
+        await _handleDeepLink(initialUri);
+      }
+
+      final loginState = await _checkLogin();
+      final loggedIn = loginState['loggedIn'] ?? false;
+      _isLoggedIn = loggedIn;
+
+      if (loggedIn) {
+         requestNotificationPermission();
+         AppOpenAdService().loadAd();
+      }
+    } catch (e) {
+      print('Error during app initialization: $e');
+    } finally {
+      setState(() {
+        _loadingLink = false;
+      });
     }
-
-    final loginState = await _checkLogin();
-    final loggedIn = loginState['loggedIn'] ?? false;
-    _loggedIn = loggedIn;
-
-    if (loggedIn) {
-       requestNotificationPermission();
-       AppOpenAdService().loadAd();
-    }
-
-    setState(() {
-      _loadingLink = false;
-    });
   }
 
   Future<void> _handleDeepLink(Uri uri) async {
@@ -163,26 +176,32 @@ class _MyAppState extends State<MyApp> {
         ),
       ],
       redirect: (context, state) async {
-        final loginState = await _checkLogin();
-        final loggedIn = loginState['loggedIn'] ?? false;
+        try {
+          final loginState = await _checkLogin();
+          final loggedIn = loginState['loggedIn'] ?? false;
+          _isLoggedIn = loggedIn;
 
-        if (loggedIn &&
-            (state.uri.path == '/login' || state.uri.path == '/register')) {
-          return '/home';
-        }
+          if (loggedIn &&
+              (state.uri.path == '/login' || state.uri.path == '/register')) {
+            return '/home';
+          }
 
-        final isProtectedRoute =
-            state.uri.path.startsWith('/home') ||
-            state.uri.path.startsWith('/perfil');
-        if (!loggedIn && isProtectedRoute) {
+          final isProtectedRoute =
+              state.uri.path.startsWith('/home') ||
+              state.uri.path.startsWith('/perfil');
+          if (!loggedIn && isProtectedRoute) {
+            return '/login';
+          }
+
+          return null;
+        } catch (e) {
+          print('Error in redirect: $e');
           return '/login';
         }
-
-        return null;
       },
     );
 
-    if (!_adShown && _loggedIn) {
+    if (!_adShown && _isLoggedIn) {
       _adShown = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         AppOpenAdService().showAdIfAvailable();
