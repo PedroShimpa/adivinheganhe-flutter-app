@@ -32,12 +32,23 @@ class _AdivinhacaoCardState extends State<AdivinhacaoCard>
   List<dynamic> comentarios = [];
   bool loadingComentarios = false;
   bool mediaInitialized = false;
+  bool isVip = false;
 
   @override
   void initState() {
     super.initState();
     likes = ValueNotifier(widget.adivinhacao['likes_count'] ?? 0);
     liked = ValueNotifier(widget.adivinhacao['liked'] ?? false);
+    _checkVipStatus();
+  }
+
+  Future<void> _checkVipStatus() async {
+    try {
+      isVip = await ApiService().isVip();
+      setState(() {});
+    } catch (_) {
+      // Default to false if error
+    }
   }
 
   Future<void> _carregarComentarios() async {
@@ -267,12 +278,52 @@ Future<void> _abrirComentariosModal() async {
             if (widget.adivinhacao['imagem'] != null)
               buildMedia(widget.adivinhacao['imagem']),
             const SizedBox(height: 12),
-            Text(
-              widget.adivinhacao['titulo'] ?? '',
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    widget.adivinhacao['titulo'] ?? '',
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                if (widget.adivinhacao['only_members'] == 1)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.orange,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.star, color: Colors.white, size: 16),
+                        SizedBox(width: 4),
+                        Text(
+                          'VIP',
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 8),
             Html(data: widget.adivinhacao['descricao'] ?? ''),
+            const SizedBox(height: 8),
+            if (widget.adivinhacao['dificuldade'] != null)
+              Text(
+                "Dificuldade: ${widget.adivinhacao['dificuldade']}",
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              ),
+            if (widget.adivinhacao['vip_release_at'] != null)
+              Text(
+                "Liberado para VIPs em: ${widget.adivinhacao['vip_release_at']}",
+                style: const TextStyle(fontSize: 14, color: Colors.purple, fontWeight: FontWeight.w500),
+              ),
+            if (widget.adivinhacao['only_members'] == true)
+              const Text(
+                "Apenas para membros VIP",
+                style: TextStyle(fontSize: 14, color: Colors.orange, fontWeight: FontWeight.w500),
+              ),
             const SizedBox(height: 8),
             buildPremio(),
             if(widget.adivinhacao['expire_at_br'] != null)
@@ -281,58 +332,85 @@ Future<void> _abrirComentariosModal() async {
               style: const TextStyle(color: Colors.redAccent),
             ),
             const SizedBox(height: 12),
-            Text(
-              "Palpites restantes: $palpites",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: podeResponder ? Colors.green : Colors.red,
-              ),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: respostaController,
-              enabled: podeResponder,
-              decoration: InputDecoration(
-                hintText:
-                    podeResponder
-                        ? "Digite sua resposta..."
-                        : "Sem palpites hoje",
-                filled: true,
-                fillColor: Colors.grey[100],
-                border: OutlineInputBorder(
+            // Check if adivinhacao is VIP-only or released to VIPs first and user is not VIP
+            if ((widget.adivinhacao['only_members'] == 1 || (widget.adivinhacao['vip_release_at'] != null && DateTime.now().isBefore(DateTime.parse(widget.adivinhacao['vip_release_at'])))) && !isVip)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
+                  border: Border.all(color: Colors.orange, width: 1),
                 ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.star, color: Colors.orange),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        "Apenas membros VIP podem responder a esta adivinhação.",
+                        style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              Column(
+                children: [
+                  Text(
+                    "Palpites restantes: $palpites",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: podeResponder ? Colors.green : Colors.red,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: respostaController,
+                    enabled: podeResponder,
+                    decoration: InputDecoration(
+                      hintText:
+                          podeResponder
+                              ? "Digite sua resposta..."
+                              : "Sem palpites hoje",
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          podeResponder ? const Color(0xFF0A2540) : Colors.grey,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 18,
+                        horizontal: 24,
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    onPressed:
+                        podeResponder
+                            ? () => widget.onResponder(
+                              widget.adivinhacao['id'],
+                              respostaController.text,
+                              widget.index,
+                            )
+                            : null,
+                    child: const Text("Responder"),
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    podeResponder ? const Color(0xFF0A2540) : Colors.grey,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  vertical: 18,
-                  horizontal: 24,
-                ),
-                textStyle: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              onPressed:
-                  podeResponder
-                      ? () => widget.onResponder(
-                        widget.adivinhacao['id'],
-                        respostaController.text,
-                        widget.index,
-                      )
-                      : null,
-              child: const Text("Responder"),
-            ),
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,

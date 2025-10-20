@@ -25,6 +25,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
   bool loading = true;
   Map<String, dynamic>? user;
   List posts = [];
+  bool _isVip = false;
 
   @override
   void initState() {
@@ -47,13 +48,17 @@ class _PerfilScreenState extends State<PerfilScreen> {
         if (res.statusCode == 200) {
           final data = json.decode(res.body);
           final u = data['user'];
-          setState(() {
-            user = u;
-            posts = u['posts'] ?? [];
-          });
+          if (mounted) {
+            setState(() {
+              user = u;
+              posts = u['posts'] ?? [];
+            });
+          }
         }
       } finally {
-        setState(() => loading = false);
+        if (mounted) {
+          setState(() => loading = false);
+        }
       }
     } catch (e) {
       widget.onLogout;
@@ -78,9 +83,13 @@ class _PerfilScreenState extends State<PerfilScreen> {
 
   Future<void> _loadCurrentUser() async {
     final u = await apiService.getUser(); // pega do storage
-    setState(() {
-      currentUser = u;
-    });
+    final isVip = await apiService.isVip();
+    if (mounted) {
+      setState(() {
+        currentUser = u;
+        _isVip = isVip;
+      });
+    }
   }
 
   Future<void> _createPost(String content, [String? filePath]) async {
@@ -287,7 +296,9 @@ class _PerfilScreenState extends State<PerfilScreen> {
                             },
                           ),
                 ),
-                const AdmobBannerWidget(adUnitId: 'ca-app-pub-2128338486173774/2391858728'),
+                if (!_isVip) ...[
+                  const AdmobBannerWidget(adUnitId: 'ca-app-pub-2128338486173774/2391858728'),
+                ],
               ],
             ),
           ),

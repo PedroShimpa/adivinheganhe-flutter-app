@@ -135,4 +135,12 @@ class ApiService {
       debugPrint('Error logging out: $e');
     }
   }
+
+  Future<bool> isVip() async {
+    final user = await getUser();
+    if (user != null && user['is_vip'] != null) {
+      return user['is_vip'] == 1 || user['is_vip'] == true;
+    }
+    return false;
+  }
 }

@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
 import '../services/api_service.dart';
 import 'package:http/http.dart' as http;
 
@@ -18,7 +17,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   final ApiService apiService = ApiService();
   final TextEditingController _msgController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  late WebSocketChannel channel;
+
   List<Map<String, dynamic>> messages = [];
   Map<String, dynamic>? currentUser;
   int? receiverId;
@@ -33,7 +32,6 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   @override
   void dispose() {
-    channel.sink.close();
     _msgController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -167,6 +165,8 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                         final isMe =
                             currentUser != null &&
                             msg['user_id'] == currentUser!['id'];
+                        final isVip = msg['is_vip'] == true;
+                        final isAdmin = msg['is_admin'] == true;
                         return Align(
                           alignment:
                               isMe
@@ -179,9 +179,23 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                               color: isMe ? Colors.blue : Colors.grey[700],
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: Text(
-                              msg['mensagem'],
-                              style: const TextStyle(color: Colors.white),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (isVip || isAdmin)
+                                  Text(
+                                    isAdmin ? 'ADMIN' : 'MEMBRO VIP',
+                                    style: TextStyle(
+                                      color: isAdmin ? Colors.red : Colors.yellow,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                Text(
+                                  msg['mensagem'],
+                                  style: const TextStyle(color: Colors.white),
+                                ),
+                              ],
                             ),
                           ),
                         );

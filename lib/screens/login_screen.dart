@@ -28,11 +28,7 @@ class _LoginScreenState extends State<LoginScreen> {
         final username = user?['name'] ?? 'Usuário';
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Bem-vindo, $username!')),
-          );
-
-          context.go('/home');
+          context.go('/home', extra: 'Bem-vindo, $username!');
         }
       } else {
         if (mounted) {

@@ -46,6 +46,7 @@ class _MyAppState extends State<MyApp> {
   GoRouter? _router;
   bool _adShown = false;
   bool _isLoggedIn = false;
+  String _initialRoute = '/login';
 
   @override
   void initState() {
@@ -90,10 +91,14 @@ class _MyAppState extends State<MyApp> {
       final loginState = await _checkLogin();
       final loggedIn = loginState['loggedIn'] ?? false;
       _isLoggedIn = loggedIn;
+      _initialRoute = loggedIn ? '/home' : '/login';
 
       if (loggedIn) {
          requestNotificationPermission();
-         AppOpenAdService().loadAd();
+         final isVip = await ApiService().isVip();
+         if (!isVip) {
+           AppOpenAdService().loadAd();
+         }
       }
     } catch (e) {
       print('Error during app initialization: $e');
@@ -147,7 +152,7 @@ class _MyAppState extends State<MyApp> {
     }
 
     _router ??= GoRouter(
-      initialLocation: '/login',
+      initialLocation: _initialRoute,
       routes: [
         GoRoute(
           path: '/friend-requests',

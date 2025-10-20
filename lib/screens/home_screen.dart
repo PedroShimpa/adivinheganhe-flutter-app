@@ -4,11 +4,14 @@ import 'package:adivinheganhe/screens/friends_screen.dart';
 import 'package:adivinheganhe/screens/meus_premios_screen.dart';
 import 'package:adivinheganhe/screens/perfil_screen.dart';
 import 'package:adivinheganhe/screens/players_screen.dart';
+import 'package:adivinheganhe/screens/suporte_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:go_router/go_router.dart';
 import 'package:adivinheganhe/widgets/adivinhacao_card_widget.dart';
 import 'package:adivinheganhe/widgets/admob_banner_widget.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -29,21 +32,59 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Map<String, dynamic>? user;
   String? username;
+  bool _isExpanded = false;
+  bool _isVip = false;
 
   @override
   void initState() {
     super.initState();
     _loadUser();
+    _loadExpandedState();
     fetchAdivinhacoes();
+
+    // Check for extra data from login screen
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final extra = GoRouterState.of(context).extra;
+      if (extra is String && extra.startsWith('Bem-vindo')) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(extra)),
+        );
+      }
+    });
   }
 
   Future<void> _loadUser() async {
     try {
       user = await apiService.getUser();
       username = user?['username'];
+      _isVip = await apiService.isVip();
       setState(() {});
     } catch (e) {
+      // print(e);
       logout();
+    }
+  }
+
+  Future<void> _loadExpandedState() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      setState(() {
+        _isExpanded = prefs.getBool('isExpanded') ?? true;
+      });
+    } catch (e) {
+      // Fallback to default if SharedPreferences fails
+      setState(() {
+        _isExpanded = true;
+      });
+    }
+  }
+
+  Future<void> _saveExpandedState(bool value) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isExpanded', value);
+    } catch (e) {
+      // Silently fail if SharedPreferences is not available
     }
   }
 
@@ -170,9 +211,139 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         Column(
           children: [
+            // Expandable Container for Indication and WhatsApp
+            ExpansionTile(
+              title: const Text(
+                'Promoções e Comunidade',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              initiallyExpanded: _isExpanded,
+              onExpansionChanged: (expanded) {
+                setState(() {
+                  _isExpanded = expanded;
+                });
+                _saveExpandedState(expanded);
+              },
+              collapsedIconColor: Colors.white,
+              iconColor: Colors.white,
+              children: [
+                // Indication Section
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white.withOpacity(0.2)),
+                  ),
+                  child: Column(
+                    children: [
+                      const Text(
+                        '🎯 Indique e ganhe 5 palpites por adivinhador registrado em seu link',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        constraints: const BoxConstraints(maxWidth: 500),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: TextEditingController(
+                                  text: 'https://adivinheganhe.com.br/register?ib=${user?['uuid'] ?? ''}',
+                                ),
+                                readOnly: true,
+                                style: const TextStyle(color: Colors.white),
+                                decoration: InputDecoration(
+                                  filled: true,
+                                  fillColor: Colors.white.withOpacity(0.1),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            ElevatedButton(
+                              onPressed: () async {
+                                final link = 'https://adivinheganhe.com.br/register?ib=${user?['uuid'] ?? ''}';
+                                await Clipboard.setData(ClipboardData(text: link));
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Link copiado!')),
+                                  );
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: const Text('Copiar link'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // WhatsApp Community Alert
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.green.withOpacity(0.3), width: 2),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.chat, color: Colors.green, size: 24),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Text(
+                          'Entre na nossa comunidade do WhatsApp!',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                      ElevatedButton(
+                        onPressed: () => _openUrl('https://whatsapp.com/channel/0029VbBcnEJ35fLpTurxDe33'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        ),
+                        child: const Text('Participar agora'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.only(top: 8, bottom: 16),
+                padding: const EdgeInsets.only(bottom: 16),
                 child: RefreshIndicator(
                   onRefresh: fetchAdivinhacoes,
                   child: ListView.builder(
@@ -191,8 +362,10 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             // AdMob Banner
-            const SizedBox(height: 8),
-            const AdmobBannerWidget(adUnitId: 'ca-app-pub-2128338486173774/2391858728'),
+            if (!_isVip) ...[
+              const SizedBox(height: 8),
+              const AdmobBannerWidget(adUnitId: 'ca-app-pub-2128338486173774/2391858728'),
+            ],
           ],
         ),
         PerfilScreen(username: username ?? '', onLogout: logout),
@@ -264,7 +437,23 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 },
               ),
+              ListTile(
+                leading: const Icon(Icons.emoji_events),
+                title: const Text('Premiações'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _openUrl('https://adivinheganhe.com.br/premiacoes');
+                },
+              ),
               const Divider(),
+              ListTile(
+                leading: const Icon(Icons.star),
+                title: const Text('Seja Membro'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _openUrl('https://adivinheganhe.com.br/seja-membro');
+                },
+              ),
               ListTile(
                 leading: const Icon(Icons.shopping_cart),
                 title: const Text('Comprar Palpites'),
@@ -287,6 +476,25 @@ class _HomeScreenState extends State<HomeScreen> {
                 onTap: () {
                   Navigator.pop(context);
                   _openUrl('https://adivinheganhe.com.br/suporte');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.assignment),
+                title: const Text('Meus Chamados'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SuporteScreen()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.star),
+                title: const Text('Adivinhações VIP'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _openUrl('https://adivinheganhe.com.br/adivinhacoes-vip');
                 },
               ),
               ListTile(
@@ -363,6 +571,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
       final data = jsonDecode(response.body);
 
+      // Always show 'info' or 'error' if present
+      if (data['info'] != null || data['error'] != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data['info'] ?? data['error'])),
+        );
+      }
+
       if (response.statusCode == 200) {
         setState(() {
           adivinhacoes[index]['palpites_restantes'] = data['trys'];
@@ -394,9 +609,7 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("${data['info'] ?? response.body}")),
-        );
+        // Additional handling for non-200 if needed, but 'info'/'error' already shown above
       }
     } catch (e) {
       if (mounted) {

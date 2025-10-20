@@ -18,11 +18,20 @@ class _FriendsScreenState extends State<FriendsScreen> {
   final ApiService apiService = ApiService();
   List<dynamic> friends = [];
   bool loading = true;
+  bool _isVip = false;
 
   @override
   void initState() {
     super.initState();
+    _loadVipStatus();
     fetchFriends();
+  }
+
+  Future<void> _loadVipStatus() async {
+    final isVip = await apiService.isVip();
+    setState(() {
+      _isVip = isVip;
+    });
   }
 
   Future<void> fetchFriends() async {
@@ -181,7 +190,9 @@ class _FriendsScreenState extends State<FriendsScreen> {
                       },
                     ),
           ),
-          const AdmobBannerWidget(adUnitId: 'ca-app-pub-2128338486173774/2391858728'),
+          if (!_isVip) ...[
+            const AdmobBannerWidget(adUnitId: 'ca-app-pub-2128338486173774/2391858728'),
+          ],
         ],
       ),
     );
