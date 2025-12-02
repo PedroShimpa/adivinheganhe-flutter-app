@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../services/api_service.dart';
+import 'package:adivinheganhe/widgets/admob_native_advanced_widget.dart';
 
 class FriendRequestsScreen extends StatefulWidget {
   const FriendRequestsScreen({super.key});
@@ -14,11 +15,20 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
   final ApiService apiService = ApiService();
   List<dynamic> requests = [];
   bool loading = true;
+  bool _isVip = false;
 
   @override
   void initState() {
     super.initState();
+    _loadVipStatus();
     fetchRequests();
+  }
+
+  Future<void> _loadVipStatus() async {
+    final isVip = await apiService.isVip();
+    setState(() {
+      _isVip = isVip;
+    });
   }
 
   Future<void> fetchRequests() async {
@@ -123,55 +133,63 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
         centerTitle: true,
         titleTextStyle: const TextStyle(color: Colors.white),
       ),
-      body:
-          loading
-              ? const Center(child: CircularProgressIndicator())
-              : requests.isEmpty
-              ? const Center(
-                child: Text(
-                  "Nenhum pedido de amizade",
-                  style: TextStyle(color: Colors.white70),
-                ),
-              )
-              : ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: requests.length,
-                itemBuilder: (context, index) {
-                  final user = requests[index];
-                  return Card(
-                    color: const Color(0xFF1B2D4A),
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: ListTile(
-                      leading: _buildAvatar(user),
-                      title: Text(
-                        user['username'],
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+      body: Column(
+        children: [
+          Expanded(
+            child: loading
+                ? const Center(child: CircularProgressIndicator())
+                : requests.isEmpty
+                ? const Center(
+                  child: Text(
+                    "Nenhum pedido de amizade",
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                )
+                : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: requests.length,
+                  itemBuilder: (context, index) {
+                    final user = requests[index];
+                    return Card(
+                      color: const Color(0xFF1B2D4A),
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: ListTile(
+                        leading: _buildAvatar(user),
+                        title: Text(
+                          user['username'],
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.check, color: Colors.green),
+                              onPressed:
+                                  () => handleAction("accept", user['sender_id']),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.close, color: Colors.red),
+                              onPressed:
+                                  () => handleAction("recuse", user['sender_id']),
+                            ),
+                          ],
                         ),
                       ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.check, color: Colors.green),
-                            onPressed:
-                                () => handleAction("accept", user['sender_id']),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.close, color: Colors.red),
-                            onPressed:
-                                () => handleAction("recuse", user['sender_id']),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
+                    );
+                  },
+                ),
+          ),
+          if (!_isVip) ...[
+            const AdmobNativeAdvancedWidget(adUnitId: 'ca-app-pub-2128338486173774/5795614167'),
+          ],
+        ],
+      ),
     );
   }
 }

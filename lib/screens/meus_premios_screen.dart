@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:adivinheganhe/services/api_service.dart';
+import 'package:adivinheganhe/widgets/admob_native_advanced_widget.dart';
 
 class MeusPremiosScreen extends StatefulWidget {
   const MeusPremiosScreen({super.key});
@@ -14,11 +15,20 @@ class _MeusPremiosScreenState extends State<MeusPremiosScreen> {
   final ApiService apiService = ApiService();
   List<dynamic> premios = [];
   bool loading = true;
+  bool _isVip = false;
 
   @override
   void initState() {
     super.initState();
+    _loadVipStatus();
     fetchPremios();
+  }
+
+  Future<void> _loadVipStatus() async {
+    final isVip = await apiService.isVip();
+    setState(() {
+      _isVip = isVip;
+    });
   }
 
   Future<void> fetchPremios() async {
@@ -60,43 +70,52 @@ print(response.body);
         centerTitle: true,
         titleTextStyle: const TextStyle(color: Colors.white),
       ),
-      body: loading
-          ? const Center(child: CircularProgressIndicator())
-          : premios.isEmpty
-              ? const Center(
-                  child: Text(
-                    "Você ainda não tem prêmios",
-                    style: TextStyle(color: Colors.white70),
-                  ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: premios.length,
-                  itemBuilder: (context, index) {
-                    final premio = premios[index];
-                    return Card(
-                      color: const Color(0xFF1B2D4A),
-                      margin: const EdgeInsets.symmetric(vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: ListTile(
-                        title: Text(
-                          premio['titulo'] ?? 'Sem título',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
+      body: Column(
+        children: [
+          Expanded(
+            child: loading
+                ? const Center(child: CircularProgressIndicator())
+                : premios.isEmpty
+                    ? const Center(
+                        child: Text(
+                          "Você ainda não tem prêmios",
+                          style: TextStyle(color: Colors.white70),
                         ),
-                        subtitle: Text(
-                          "Prêmio: ${premio['premio'] ?? '-'}\n"
-                          "Enviado: ${premio['premio_enviado'] == 1 ? "Sim" : "Não"}",
-                          style: const TextStyle(color: Colors.white70),
-                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: premios.length,
+                        itemBuilder: (context, index) {
+                          final premio = premios[index];
+                          return Card(
+                            color: const Color(0xFF1B2D4A),
+                            margin: const EdgeInsets.symmetric(vertical: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: ListTile(
+                              title: Text(
+                                premio['titulo'] ?? 'Sem título',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              subtitle: Text(
+                                "Prêmio: ${premio['premio'] ?? '-'}\n"
+                                "Enviado: ${premio['premio_enviado'] == 1 ? "Sim" : "Não"}",
+                                style: const TextStyle(color: Colors.white70),
+                              ),
+                            ),
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
+          ),
+          if (!_isVip) ...[
+            const AdmobNativeAdvancedWidget(adUnitId: 'ca-app-pub-2128338486173774/5795614167'),
+          ],
+        ],
+      ),
     );
   }
 }

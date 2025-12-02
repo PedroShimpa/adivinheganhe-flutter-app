@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:go_router/go_router.dart';
 import '../services/api_service.dart';
+import 'package:adivinheganhe/widgets/admob_native_advanced_widget.dart';
 
 class PlayersScreen extends StatefulWidget {
   const PlayersScreen({super.key});
@@ -18,11 +19,20 @@ class _PlayersScreenState extends State<PlayersScreen> {
   bool loading = true;
   final TextEditingController _searchController = TextEditingController();
   String searchQuery = "";
+  bool _isVip = false;
 
   @override
   void initState() {
     super.initState();
+    _loadVipStatus();
     fetchPlayers();
+  }
+
+  Future<void> _loadVipStatus() async {
+    final isVip = await apiService.isVip();
+    setState(() {
+      _isVip = isVip;
+    });
   }
 
   Future<void> fetchPlayers({String search = ""}) async {
@@ -220,6 +230,9 @@ class _PlayersScreenState extends State<PlayersScreen> {
                         },
                       ),
                     ),
+                    if (!_isVip) ...[
+                      const AdmobNativeAdvancedWidget(adUnitId: 'ca-app-pub-2128338486173774/5795614167'),
+                    ],
                   ],
                 ),
     );

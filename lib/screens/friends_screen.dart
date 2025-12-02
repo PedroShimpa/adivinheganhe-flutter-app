@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:go_router/go_router.dart';
 import '../services/api_service.dart';
 import 'package:adivinheganhe/widgets/admob_banner_widget.dart';
+import 'package:adivinheganhe/widgets/admob_native_advanced_widget.dart';
 
 class FriendsScreen extends StatefulWidget {
   const FriendsScreen({super.key});
@@ -191,7 +192,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                     ),
           ),
           if (!_isVip) ...[
-            const AdmobBannerWidget(adUnitId: 'ca-app-pub-2128338486173774/2391858728'),
+            const AdmobNativeAdvancedWidget(adUnitId: 'ca-app-pub-2128338486173774/5795614167'),
           ],
         ],
       ),

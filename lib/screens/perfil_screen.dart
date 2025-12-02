@@ -8,6 +8,7 @@ import 'dart:convert';
 import 'package:adivinheganhe/screens/edit_profile_screen.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:adivinheganhe/widgets/admob_banner_widget.dart';
+import 'package:adivinheganhe/widgets/admob_native_advanced_widget.dart';
 
 class PerfilScreen extends StatefulWidget {
   final String username;
@@ -190,13 +191,31 @@ class _PerfilScreenState extends State<PerfilScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        user?['username'] ?? '',
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
+                      Row(
+                        children: [
+                          Text(
+                            user?['username'] ?? '',
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          if (user?['is_admin'] == 'S' || user?['is_admin'] == true) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text(
+                                'ADMIN',
+                                style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                       const SizedBox(height: 6),
                       if (user?['perfil_privado'] != 'S' ||
@@ -297,7 +316,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
                           ),
                 ),
                 if (!_isVip) ...[
-                  const AdmobBannerWidget(adUnitId: 'ca-app-pub-2128338486173774/2391858728'),
+                  const AdmobNativeAdvancedWidget(adUnitId: 'ca-app-pub-2128338486173774/5795614167'),
                 ],
               ],
             ),

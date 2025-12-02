@@ -130,7 +130,25 @@ class _PostWidgetState extends State<PostWidget> {
                               ? const Icon(Icons.person)
                               : null,
                         ),
-                        title: Text(c.usuario),
+                        title: Row(
+                          children: [
+                            Text(c.usuario),
+                            if (c.isAdmin == true) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Text(
+                                  'ADMIN',
+                                  style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
                         subtitle: Text(c.body),
                       );
                     },

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import 'package:http/http.dart' as http;
+import 'package:adivinheganhe/widgets/admob_native_advanced_widget.dart';
 
 class ChatDetailScreen extends StatefulWidget {
   final String username;
@@ -23,6 +24,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   int? receiverId;
   bool loading = true;
   bool sending = false;
+  bool _isVip = false;
 
   @override
   void initState() {
@@ -39,7 +41,11 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   Future<void> loadUserAndMessages() async {
     final u = await apiService.getUser();
-    setState(() => currentUser = u);
+    final isVip = await apiService.isVip();
+    setState(() {
+      currentUser = u;
+      _isVip = isVip;
+    });
     await fetchMessages();
   }
 
@@ -202,31 +208,38 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                       },
                     ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            color: const Color(0xFF142B44),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _msgController,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(
-                      hintText: "Digite uma mensagem...",
-                      hintStyle: TextStyle(color: Colors.white70),
-                      border: InputBorder.none,
+          Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                color: const Color(0xFF142B44),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _msgController,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: const InputDecoration(
+                          hintText: "Digite uma mensagem...",
+                          hintStyle: TextStyle(color: Colors.white70),
+                          border: InputBorder.none,
+                        ),
+                      ),
                     ),
-                  ),
+                    IconButton(
+                      icon:
+                          sending
+                              ? const CircularProgressIndicator(color: Colors.white)
+                              : const Icon(Icons.send, color: Colors.white),
+                      onPressed: sending ? null : sendMessage,
+                    ),
+                  ],
                 ),
-                IconButton(
-                  icon:
-                      sending
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : const Icon(Icons.send, color: Colors.white),
-                  onPressed: sending ? null : sendMessage,
-                ),
+              ),
+              if (!_isVip) ...[
+                const AdmobNativeAdvancedWidget(adUnitId: 'ca-app-pub-2128338486173774/5795614167'),
               ],
-            ),
+            ],
           ),
         ],
       ),

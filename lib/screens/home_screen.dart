@@ -11,6 +11,7 @@ import 'package:http/http.dart' as http;
 import 'package:go_router/go_router.dart';
 import 'package:adivinheganhe/widgets/adivinhacao_card_widget.dart';
 import 'package:adivinheganhe/widgets/admob_banner_widget.dart';
+import 'package:adivinheganhe/widgets/admob_native_advanced_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -361,10 +362,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-            // AdMob Banner
+            // AdMob Native Advanced
             if (!_isVip) ...[
               const SizedBox(height: 8),
-              const AdmobBannerWidget(adUnitId: 'ca-app-pub-2128338486173774/2391858728'),
+              const AdmobNativeAdvancedWidget(adUnitId: 'ca-app-pub-2128338486173774/5795614167'),
             ],
           ],
         ),

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../services/api_service.dart';
+import 'package:adivinheganhe/widgets/admob_native_advanced_widget.dart';
 
 class SuporteScreen extends StatefulWidget {
   const SuporteScreen({super.key});
@@ -14,11 +15,20 @@ class _SuporteScreenState extends State<SuporteScreen> {
   final ApiService apiService = ApiService();
   List<dynamic> chamados = [];
   bool loading = true;
+  bool _isVip = false;
 
   @override
   void initState() {
     super.initState();
+    _loadVipStatus();
     fetchChamados();
+  }
+
+  Future<void> _loadVipStatus() async {
+    final isVip = await apiService.isVip();
+    setState(() {
+      _isVip = isVip;
+    });
   }
 
   Future<void> fetchChamados() async {
@@ -91,73 +101,82 @@ class _SuporteScreenState extends State<SuporteScreen> {
         backgroundColor: const Color(0xFF142B44),
       ),
       body: SafeArea(
-        child: loading
-            ? const Center(
-                child: CircularProgressIndicator(color: Colors.white),
-              )
-            : chamados.isEmpty
-                ? const Center(
-                    child: Text(
-                      'Nenhum chamado encontrado',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  )
-                : RefreshIndicator(
-                    onRefresh: fetchChamados,
-                    child: ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: chamados.length,
-                      itemBuilder: (context, index) {
-                        final chamado = chamados[index];
-                        return Card(
-                          color: Colors.white.withOpacity(0.1),
-                          margin: const EdgeInsets.only(bottom: 16),
-                          child: ListTile(
-                            title: Text(
-                              'Chamado #${chamado['id']}',
-                              style: const TextStyle(color: Colors.white),
-                            ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  chamado['categoria']?['descricao'] ?? 'N/A',
-                                  style: const TextStyle(color: Colors.white70),
-                                ),
-                                const SizedBox(height: 4),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: getStatusColor(chamado['status']).withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(12),
+        child: Column(
+          children: [
+            Expanded(
+              child: loading
+                  ? const Center(
+                      child: CircularProgressIndicator(color: Colors.white),
+                    )
+                  : chamados.isEmpty
+                      ? const Center(
+                          child: Text(
+                            'Nenhum chamado encontrado',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        )
+                      : RefreshIndicator(
+                          onRefresh: fetchChamados,
+                          child: ListView.builder(
+                            padding: const EdgeInsets.all(16),
+                            itemCount: chamados.length,
+                            itemBuilder: (context, index) {
+                              final chamado = chamados[index];
+                              return Card(
+                                color: Colors.white.withOpacity(0.1),
+                                margin: const EdgeInsets.only(bottom: 16),
+                                child: ListTile(
+                                  title: Text(
+                                    'Chamado #${chamado['id']}',
+                                    style: const TextStyle(color: Colors.white),
                                   ),
-                                  child: Text(
-                                    getStatusText(chamado['status']),
-                                    style: TextStyle(
-                                      color: getStatusColor(chamado['status']),
-                                      fontSize: 12,
-                                    ),
+                                  subtitle: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        chamado['categoria']?['descricao'] ?? 'N/A',
+                                        style: const TextStyle(color: Colors.white70),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: getStatusColor(chamado['status']).withOpacity(0.2),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Text(
+                                          getStatusText(chamado['status']),
+                                          style: TextStyle(
+                                            color: getStatusColor(chamado['status']),
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                              ],
-                            ),
-                            trailing: const Icon(
-                              Icons.arrow_forward_ios,
-                              color: Colors.white,
-                            ),
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => SuporteChatScreen(chamado: chamado),
+                                  trailing: const Icon(
+                                    Icons.arrow_forward_ios,
+                                    color: Colors.white,
+                                  ),
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => SuporteChatScreen(chamado: chamado),
+                                      ),
+                                    );
+                                  },
                                 ),
                               );
                             },
                           ),
-                        );
-                      },
-                    ),
-                  ),
+                        ),
+            ),
+            if (!_isVip) ...[
+              const AdmobNativeAdvancedWidget(adUnitId: 'ca-app-pub-2128338486173774/5795614167'),
+            ],
+          ],
+        ),
       ),
     );
   }

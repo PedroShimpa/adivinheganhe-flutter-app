@@ -3,6 +3,7 @@ import 'package:adivinheganhe/screens/chat_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../services/api_service.dart';
+import 'package:adivinheganhe/widgets/admob_native_advanced_widget.dart';
 
 class ConversasScreen extends StatefulWidget {
   const ConversasScreen({super.key});
@@ -15,11 +16,20 @@ class _ConversasScreenState extends State<ConversasScreen> {
   final ApiService apiService = ApiService();
   bool loading = true;
   List<dynamic> chats = [];
+  bool _isVip = false;
 
   @override
   void initState() {
     super.initState();
+    _loadVipStatus();
     fetchChats();
+  }
+
+  Future<void> _loadVipStatus() async {
+    final isVip = await apiService.isVip();
+    setState(() {
+      _isVip = isVip;
+    });
   }
 
   Future<void> fetchChats() async {
@@ -74,89 +84,97 @@ class _ConversasScreenState extends State<ConversasScreen> {
         title: const Text("Conversas", style: TextStyle(color: Colors.white)),
         backgroundColor: const Color(0xFF142B44),
       ),
-      body:
-          loading
-              ? const Center(
-                child: CircularProgressIndicator(color: Colors.white),
-              )
-              : chats.isEmpty
-              ? const Center(
-                child: Text(
-                  "Nenhuma conversa encontrada",
-                  style: TextStyle(color: Colors.white, fontSize: 16),
-                ),
-              )
-              : ListView.builder(
-                itemCount: chats.length,
-                itemBuilder: (context, index) {
-                  final chat = chats[index];
-                  final String username = chat['username'] ?? 'Usuário';
-                  final String ultimaMensagem =
-                      chat['ultima_mensagem'] ?? 'Sem mensagens';
-                  final int naoLidas = chat['nao_lidas'] ?? 0;
-                  final String? avatar = chat['avatar'];
+      body: Column(
+        children: [
+          Expanded(
+            child: loading
+                ? const Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                )
+                : chats.isEmpty
+                ? const Center(
+                  child: Text(
+                    "Nenhuma conversa encontrada",
+                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  ),
+                )
+                : ListView.builder(
+                  itemCount: chats.length,
+                  itemBuilder: (context, index) {
+                    final chat = chats[index];
+                    final String username = chat['username'] ?? 'Usuário';
+                    final String ultimaMensagem =
+                        chat['ultima_mensagem'] ?? 'Sem mensagens';
+                    final int naoLidas = chat['nao_lidas'] ?? 0;
+                    final String? avatar = chat['avatar'];
 
-                  return Card(
-                    color: const Color(0xFF142B44),
-                    margin: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: Colors.blueGrey,
-                        backgroundImage:
-                            avatar != null ? NetworkImage(avatar) : null,
-                        child:
-                            avatar == null
-                                ? Text(
-                                  username.isNotEmpty
-                                      ? username[0].toUpperCase()
-                                      : "?",
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 18,
-                                  ),
-                                )
-                                : null,
+                    return Card(
+                      color: const Color(0xFF142B44),
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
                       ),
-                      title: Text(
-                        username,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: Colors.blueGrey,
+                          backgroundImage:
+                              avatar != null ? NetworkImage(avatar) : null,
+                          child:
+                              avatar == null
+                                  ? Text(
+                                    username.isNotEmpty
+                                        ? username[0].toUpperCase()
+                                        : "?",
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 18,
+                                    ),
+                                  )
+                                  : null,
                         ),
-                      ),
-                      subtitle: Text(
-                        ultimaMensagem,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 14,
-                        ),
-                      ),
-                      trailing: _buildUnreadBadge(naoLidas),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (_) => ChatDetailScreen(
-                                  username: username,
-                                  avatar: avatar,
-                                ),
+                        title: Text(
+                          username,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
                           ),
-                        );
-                      },
-                    ),
-                  );
-                },
-              ),
+                        ),
+                        subtitle: Text(
+                          ultimaMensagem,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                          ),
+                        ),
+                        trailing: _buildUnreadBadge(naoLidas),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (_) => ChatDetailScreen(
+                                    username: username,
+                                    avatar: avatar,
+                                  ),
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  },
+                ),
+          ),
+          if (!_isVip) ...[
+            const AdmobNativeAdvancedWidget(adUnitId: 'ca-app-pub-2128338486173774/5795614167'),
+          ],
+        ],
+      ),
     );
   }
 }
